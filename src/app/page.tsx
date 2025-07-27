@@ -20,9 +20,9 @@ function CompanyListContent() {
         error={state.error || null}
         onRetry={loadData}
         onUseDemoData={() => {
-          // デモデータで続行する場合の処理
+          // .env.localファイルの設定を削除してデモデータで続行
           console.log('デモデータで続行します');
-          // 必要であれば、ローカルのデモデータを読み込む処理を追加
+          window.location.reload(); // ページをリロードしてデモデータで起動
         }}
       />
     );

@@ -1,9 +1,22 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'your_supabase_project_url'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'your_supabase_anon_key'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Supabaseが正しく設定されているかチェック
+export const isSupabaseConfigured = () => {
+  return supabaseUrl && 
+         supabaseAnonKey && 
+         supabaseUrl !== 'your_supabase_project_url' &&
+         supabaseAnonKey !== 'your_supabase_anon_key' &&
+         supabaseUrl.startsWith('https://') &&
+         supabaseUrl.includes('.supabase.co')
+}
+
+// 設定が正しい場合のみSupabaseクライアントを作成
+export const supabase = isSupabaseConfigured() 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null
 
 // Types for our database tables
 export interface DatabaseCompany {
@@ -83,4 +96,6 @@ export interface Database {
 }
 
 // Create typed client
-export const typedSupabase = createClient<Database>(supabaseUrl, supabaseAnonKey) 
+export const typedSupabase = isSupabaseConfigured() 
+  ? createClient<Database>(supabaseUrl, supabaseAnonKey)
+  : null 

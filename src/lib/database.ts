@@ -1,5 +1,10 @@
-import { typedSupabase, DatabaseCompany, DatabaseActivity, DatabaseRepresentative, DatabaseList } from './supabase'
+import { typedSupabase, isSupabaseConfigured, DatabaseCompany, DatabaseActivity, DatabaseRepresentative, DatabaseList } from './supabase'
 import { Company, Activity, Representative, List } from '@/types'
+
+// Supabaseが設定されていない場合のエラー
+const throwSupabaseNotConfigured = () => {
+  throw new Error('Supabaseが設定されていません。SUPABASE_SETUP.mdを参照してセットアップを完了してください。')
+}
 
 // 型変換ヘルパー関数
 const convertDatabaseCompanyToCompany = (dbCompany: DatabaseCompany): Company => ({
@@ -78,31 +83,42 @@ const convertDatabaseListToList = (dbList: DatabaseList): List => ({
 
 // 企業データのCRUD操作
 export const companyService = {
-    // 全企業を取得
-    async getAll(): Promise<Company[]> {
-        const { data, error } = await typedSupabase
-            .from('companies')
-            .select('*')
-            .order('created_at', { ascending: false })
+  // 全企業を取得
+  async getAll(): Promise<Company[]> {
+    if (!isSupabaseConfigured() || !typedSupabase) {
+      throwSupabaseNotConfigured()
+    }
 
-        if (error) throw error
-        return data?.map(convertDatabaseCompanyToCompany) || []
-    },
+    const { data, error } = await typedSupabase
+      .from('companies')
+      .select('*')
+      .order('created_at', { ascending: false })
 
-    // 企業を追加
-    async add(company: Omit<Company, 'id' | 'createdAt' | 'updatedAt'>): Promise<Company> {
-        const { data, error } = await typedSupabase
-            .from('companies')
-            .insert(convertCompanyToDatabaseInsert(company))
-            .select()
-            .single()
+    if (error) throw error
+    return data?.map(convertDatabaseCompanyToCompany) || []
+  },
 
-        if (error) throw error
-        return convertDatabaseCompanyToCompany(data)
-    },
+      // 企業を追加
+  async add(company: Omit<Company, 'id' | 'createdAt' | 'updatedAt'>): Promise<Company> {
+    if (!isSupabaseConfigured() || !typedSupabase) {
+      throwSupabaseNotConfigured()
+    }
 
-    // 企業を更新
-    async update(id: string, company: Partial<Omit<Company, 'id' | 'createdAt'>>): Promise<Company> {
+    const { data, error } = await typedSupabase
+      .from('companies')
+      .insert(convertCompanyToDatabaseInsert(company))
+      .select()
+      .single()
+
+    if (error) throw error
+    return convertDatabaseCompanyToCompany(data)
+  },
+
+  // 企業を更新
+  async update(id: string, company: Partial<Omit<Company, 'id' | 'createdAt'>>): Promise<Company> {
+    if (!isSupabaseConfigured() || !typedSupabase) {
+      throwSupabaseNotConfigured()
+    }
         const updateData: any = {}
         if (company.name) updateData.name = company.name
         if (company.contactPerson) updateData.contact_person = company.contactPerson
@@ -126,15 +142,19 @@ export const companyService = {
         return convertDatabaseCompanyToCompany(data)
     },
 
-    // 企業を削除
-    async delete(id: string): Promise<void> {
-        const { error } = await typedSupabase
-            .from('companies')
-            .delete()
-            .eq('id', id)
+      // 企業を削除
+  async delete(id: string): Promise<void> {
+    if (!isSupabaseConfigured() || !typedSupabase) {
+      throwSupabaseNotConfigured()
+    }
 
-        if (error) throw error
-    },
+    const { error } = await typedSupabase
+      .from('companies')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+  },
 }
 
 // 活動データのCRUD操作

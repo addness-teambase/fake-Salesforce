@@ -1,3 +1,28 @@
+// ユーザー情報の型定義
+export interface User {
+    id: string;
+    email: string;
+    name: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// 認証情報の型定義
+export interface AuthState {
+    user: User | null;
+    isAuthenticated: boolean;
+    isLoading: boolean;
+}
+
+// リスト情報の型定義
+export interface List {
+    id: string;
+    name: string;
+    description?: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 // 担当者情報の型定義
 export interface Representative {
     id: string;
@@ -17,45 +42,39 @@ export interface Company {
     email: string; // 電子メール
     phoneNumber: string;
     representativeId: string; // 自社担当者ID
+    listId?: string; // リストID（任意）
+    prospectScore: string; // 見込み度ランク（S, A, B, C, D, E, F, G, Z）
     memo?: string;
     createdAt: Date;
     updatedAt: Date;
 }
 
-// 活動記録の型定義
+// 活動記録の型定義（商談、メール、電話の3つに限定）
 export interface Activity {
     id: string;
     companyId: string;
     date: Date;
-    type: 'phone' | 'visit' | 'email' | 'other';
+    type: 'negotiation' | 'email' | 'phone'; // 商談、メール、電話の3つに限定
+    title: string; // 活動のタイトル
     content: string;
+    amount?: number; // 商談金額（商談系の場合）
+    probability?: number; // 受注確率（商談系の場合）
+    status?: 'failed' | 'next_proposal' | 'consideration' | 'internal_sharing' | 'trial_contract' | 'contract' | 'opinion_exchange'; // 商談結果
     nextAction?: string;
     nextActionDate?: Date;
     createdAt: Date;
-}
-
-// 商談の型定義
-export interface Deal {
-    id: string;
-    companyId: string;
-    name: string;
-    amount: number;
-    status: 'prospect' | 'negotiating' | 'proposal' | 'closing' | 'won' | 'lost';
-    probability: number; // 受注確率（0-100%）
-    expectedCloseDate?: Date;
-    actualCloseDate?: Date;
-    result?: 'success' | 'failure';
-    resultReason?: string;
-    createdAt: Date;
     updatedAt: Date;
 }
+
+// 商談は活動の一部として統合されたため削除
 
 // アプリケーション全体の状態
 export interface AppState {
     companies: Company[];
     activities: Activity[];
-    deals: Deal[];
     representatives: Representative[];
+    lists: List[];
+    auth: AuthState;
 }
 
 // アクション型定義
@@ -66,9 +85,14 @@ export type AppAction =
     | { type: 'ADD_ACTIVITY'; payload: Activity }
     | { type: 'UPDATE_ACTIVITY'; payload: Activity }
     | { type: 'DELETE_ACTIVITY'; payload: string }
-    | { type: 'ADD_DEAL'; payload: Deal }
-    | { type: 'UPDATE_DEAL'; payload: Deal }
-    | { type: 'DELETE_DEAL'; payload: string }
     | { type: 'ADD_REPRESENTATIVE'; payload: Representative }
     | { type: 'UPDATE_REPRESENTATIVE'; payload: Representative }
-    | { type: 'DELETE_REPRESENTATIVE'; payload: string }; 
+    | { type: 'DELETE_REPRESENTATIVE'; payload: string }
+    | { type: 'ADD_LIST'; payload: List }
+    | { type: 'UPDATE_LIST'; payload: List }
+    | { type: 'DELETE_LIST'; payload: string }
+    | { type: 'LOGIN_START' }
+    | { type: 'LOGIN_SUCCESS'; payload: User }
+    | { type: 'LOGIN_FAILURE' }
+    | { type: 'LOGOUT' }
+    | { type: 'RESTORE_AUTH_STATE'; payload: AuthState }; 

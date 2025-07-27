@@ -75,10 +75,18 @@ export interface AppState {
     representatives: Representative[];
     lists: List[];
     auth: AuthState;
+    isLoading?: boolean;
+    error?: string | null;
 }
 
 // アクション型定義
 export type AppAction =
+    // データセット関連のアクション
+    | { type: 'SET_COMPANIES'; payload: Company[] }
+    | { type: 'SET_ACTIVITIES'; payload: Activity[] }
+    | { type: 'SET_REPRESENTATIVES'; payload: Representative[] }
+    | { type: 'SET_LISTS'; payload: List[] }
+    // 企業関連のアクション
     | { type: 'ADD_COMPANY'; payload: Company }
     | { type: 'UPDATE_COMPANY'; payload: Company }
     | { type: 'DELETE_COMPANY'; payload: string }

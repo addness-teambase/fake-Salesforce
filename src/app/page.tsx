@@ -1,14 +1,32 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useApp, generateId } from '@/context/AppContext';
+import { useApp } from '@/context/AppContext';
+import { generateId } from '@/lib/utils';
 import { Company, Representative, List } from '@/types';
 import Link from 'next/link';
 import AuthGuard from '@/components/AuthGuard';
 import CompanyDetail from '@/components/CompanyDetail';
+import LoadingFallback from '@/components/LoadingFallback';
 
 function CompanyListContent() {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, loadData } = useApp();
+
+  // ローディング状態やエラー状態をチェック
+  if (state.isLoading || state.error) {
+    return (
+      <LoadingFallback
+        isLoading={state.isLoading || false}
+        error={state.error || null}
+        onRetry={loadData}
+        onUseDemoData={() => {
+          // デモデータで続行する場合の処理
+          console.log('デモデータで続行します');
+          // 必要であれば、ローカルのデモデータを読み込む処理を追加
+        }}
+      />
+    );
+  }
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [showCsvImport, setShowCsvImport] = useState(false);

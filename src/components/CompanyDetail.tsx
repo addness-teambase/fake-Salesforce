@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useApp, generateId } from '@/context/AppContext';
+import { useApp } from '@/context/AppContext';
+import { generateId } from '@/lib/utils';
 import { Company, Activity } from '@/types';
 
 interface CompanyDetailProps {

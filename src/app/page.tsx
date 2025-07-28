@@ -504,7 +504,7 @@ function CompanyListContent() {
 
     for (let i = 0; i < tableRows.length; i++) {
       const rowRect = tableRows[i].getBoundingClientRect();
-      
+
       // マウスが行の中にある場合
       if (mouseY >= rowRect.top && mouseY <= rowRect.bottom) {
         return i;
@@ -544,21 +544,21 @@ function CompanyListContent() {
   const updateSelectionWhileScrolling = () => {
     if (isRangeSelecting && rangeStartIndex !== null && scrollDirectionRef.current) {
       const direction = scrollDirectionRef.current;
-      
+
       // 現在の選択終了インデックスを取得
       const currentEndIndex = rangeEndIndex ?? rangeStartIndex;
-      
+
       // スクロール方向に基づいて選択範囲を拡張
       let newEndIndex = currentEndIndex;
-      
+
       if (direction === 'down') {
-        // 下向きスクロール：選択範囲を下に拡張（1行ずつ）
-        newEndIndex = Math.min(filteredCompanies.length - 1, currentEndIndex + 1);
+        // 下向きスクロール：選択範囲を下に拡張（3行ずつで確実に流れる感覚）
+        newEndIndex = Math.min(filteredCompanies.length - 1, currentEndIndex + 3);
       } else if (direction === 'up') {
         // 上向きスクロール：選択範囲を上に拡張
-        newEndIndex = Math.max(0, currentEndIndex - 1);
+        newEndIndex = Math.max(0, currentEndIndex - 3);
       }
-      
+
       if (newEndIndex !== currentEndIndex) {
         setRangeEndIndex(newEndIndex);
 
@@ -577,7 +577,7 @@ function CompanyListContent() {
   // 自動スクロール機能
   const startAutoScroll = (direction: 'up' | 'down', speed: number) => {
     stopAutoScroll(); // 既存のスクロールを停止
-    
+
     // スクロール方向を記録
     scrollDirectionRef.current = direction;
 
@@ -585,11 +585,11 @@ function CompanyListContent() {
       if (containerRef.current) {
         const scrollAmount = direction === 'up' ? -speed : speed;
         containerRef.current.scrollBy(0, scrollAmount);
-        
+
         // スクロール後に選択範囲を更新
         updateSelectionWhileScrolling();
       }
-    }, 50); // より緩やかに選択範囲を拡張
+    }, 30); // より頻繁に選択範囲を拡張してスムーズに
   };
 
   const stopAutoScroll = () => {
@@ -605,7 +605,7 @@ function CompanyListContent() {
     if (isRangeSelecting && rangeStartIndex !== null) {
       // 現在のマウス位置を保存
       currentMouseYRef.current = event.clientY;
-      
+
       setRangeEndIndex(currentIndex);
 
       // 範囲内の企業を選択
@@ -621,20 +621,20 @@ function CompanyListContent() {
       const rect = containerRef.current?.getBoundingClientRect();
       if (rect) {
         const mouseY = event.clientY;
-        const scrollZoneHeight = 80; // スクロールゾーンの高さ（少し小さく）
-        const maxSpeed = 8; // 最大スクロール速度（少し遅く）
-        const minSpeed = 1; // 最小スクロール速度
+        const scrollZoneHeight = 100; // スクロールゾーンを広げる
+        const maxSpeed = 12; // 最大スクロール速度を上げる
+        const minSpeed = 2; // 最小スクロール速度も上げる
 
         // 上端でのスクロール
         if (mouseY - rect.top < scrollZoneHeight) {
           const distance = scrollZoneHeight - (mouseY - rect.top);
-          const speed = Math.max(minSpeed, Math.min(maxSpeed, (distance / scrollZoneHeight) * maxSpeed + 1));
+          const speed = Math.max(minSpeed, Math.min(maxSpeed, (distance / scrollZoneHeight) * maxSpeed + 2));
           startAutoScroll('up', speed);
         }
         // 下端でのスクロール
         else if (rect.bottom - mouseY < scrollZoneHeight) {
           const distance = scrollZoneHeight - (rect.bottom - mouseY);
-          const speed = Math.max(minSpeed, Math.min(maxSpeed, (distance / scrollZoneHeight) * maxSpeed + 1));
+          const speed = Math.max(minSpeed, Math.min(maxSpeed, (distance / scrollZoneHeight) * maxSpeed + 2));
           startAutoScroll('down', speed);
         }
         // スクロールゾーン外では停止
@@ -2253,8 +2253,8 @@ function CompanyListContent() {
               {searchTerm ? '該当する企業が見つかりません。' : '企業が登録されていません。'}
             </div>
           ) : (
-            <div 
-              className={`overflow-x-auto ${isRangeSelecting ? 'select-none cursor-crosshair' : ''}`} 
+            <div
+              className={`overflow-x-auto ${isRangeSelecting ? 'select-none cursor-crosshair' : ''}`}
               ref={containerRef}
             >
               <table className="w-full">
@@ -2373,7 +2373,7 @@ function CompanyListContent() {
                           : isInRange && isRangeSelecting
                             ? 'bg-blue-50 border-blue-200 shadow-sm'
                             : isRangeSelecting
-                              ? 'hover:bg-blue-25'  
+                              ? 'hover:bg-blue-25'
                               : 'hover:bg-gray-50'
                           } ${draggedCompany === company.id ? 'opacity-50 bg-yellow-50' : ''
                           } relative group ${isRangeSelecting ? 'cursor-crosshair' : 'cursor-move'} border border-transparent`}
@@ -2412,23 +2412,23 @@ function CompanyListContent() {
                             className="text-blue-600 hover:text-blue-800 font-medium text-left"
                             title={company.name}
                           >
-                            <div className="max-w-32 truncate">
+                            <div className="max-w-64 truncate">
                               {company.name}
                             </div>
                           </button>
                         </td>
                         <td className="px-4 py-4">
-                          <div className="max-w-24 truncate text-gray-900" title={company.contactPerson}>
+                          <div className="max-w-32 truncate text-gray-900" title={company.contactPerson}>
                             {company.contactPerson}
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <div className="max-w-28 truncate text-gray-600" title={company.department}>
+                          <div className="max-w-36 truncate text-gray-600" title={company.department}>
                             {company.department}
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <div className="max-w-24 truncate text-gray-600" title={company.position}>
+                          <div className="max-w-32 truncate text-gray-600" title={company.position}>
                             {company.position}
                           </div>
                         </td>
@@ -2465,7 +2465,7 @@ function CompanyListContent() {
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <div className="max-w-32 truncate text-gray-600" title={getProspectScoreText(company.prospectScore)}>
+                          <div className="max-w-48 truncate text-gray-600" title={getProspectScoreText(company.prospectScore)}>
                             {getProspectScoreText(company.prospectScore)}
                           </div>
                         </td>

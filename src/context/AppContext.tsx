@@ -79,6 +79,36 @@ const demoCompanies: Company[] = [
         createdAt: new Date('2024-02-10'),
         updatedAt: new Date('2024-02-10'),
     },
+    {
+        id: 'company-4',
+        name: '新規見込み企業株式会社',
+        contactPerson: '鈴木次郎',
+        department: '営業部',
+        position: '課長',
+        email: 'suzuki@shinki-mikomi.co.jp',
+        phoneNumber: '03-5555-6666',
+        representativeId: 'rep-1',
+        listId: '00000000-0000-0000-0000-000000000002',
+        prospectScore: undefined, // 見込み度未設定
+        memo: 'まだ初回接触のみ。見込み度は未評価。',
+        createdAt: new Date('2024-02-15'),
+        updatedAt: new Date('2024-02-15'),
+    },
+    {
+        id: 'company-5',
+        name: '未設定見込み商事',
+        contactPerson: '高橋三郎',
+        department: '総務部',
+        position: '部長代理',
+        email: 'takahashi@misetei-mikomi.co.jp',
+        phoneNumber: '06-7777-8888',
+        representativeId: 'rep-2',
+        listId: undefined, // リストも未設定
+        prospectScore: undefined, // 見込み度未設定
+        memo: 'リスト未分類、見込み度未設定の企業サンプル。',
+        createdAt: new Date('2024-02-18'),
+        updatedAt: new Date('2024-02-18'),
+    },
 ];
 
 const demoActivities: Activity[] = [

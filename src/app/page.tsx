@@ -823,36 +823,27 @@ function CompanyListContent() {
     const phoneNumber = formData.get('phoneNumber') as string;
     const representativeId = formData.get('representativeId') as string;
     const listId = formData.get('listId') as string;
-    
-    // 見込み度の適切な処理（空文字列の場合はundefinedに設定）
-    const prospectScoreValue = formData.get('prospectScore') as string;
-    const prospectScore = prospectScoreValue === '' ? undefined : prospectScoreValue;
-    
+    const prospectScoreRaw = formData.get('prospectScore') as string;
     const memo = formData.get('memo') as string;
 
-    // 必須項目のチェック
-    if (!name.trim()) {
-      alert('会社名は必須です。');
-      return;
-    }
-    
-    if (!representativeId) {
-      alert('担当者を選択してください。');
-      return;
-    }
+    // 必須項目は会社名と担当者のみ
+    if (!name || !representativeId) return;
+
+    // 見込み度の処理（空文字列の場合はundefinedに）
+    const prospectScore = prospectScoreRaw && prospectScoreRaw.trim() !== '' ? prospectScoreRaw : undefined;
 
     const newCompany: Company = {
       id: generateId(),
-      name: name.trim(),
-      contactPerson: contactPerson.trim() || '未設定',
-      department: department.trim() || '未設定',
-      position: position.trim() || '未設定',
-      email: email.trim(),
-      phoneNumber: phoneNumber.trim(),
+      name,
+      contactPerson: contactPerson || '未設定',
+      department: department || '未設定',
+      position: position || '未設定',
+      email: email || '',
+      phoneNumber: phoneNumber || '',
       representativeId,
       listId: listId || undefined,
       prospectScore,
-      memo: memo.trim() || undefined,
+      memo: memo || undefined,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -873,36 +864,27 @@ function CompanyListContent() {
     const phoneNumber = formData.get('phoneNumber') as string;
     const representativeId = formData.get('representativeId') as string;
     const listId = formData.get('listId') as string;
-    
-    // 見込み度の適切な処理（空文字列の場合はundefinedに設定）
-    const prospectScoreValue = formData.get('prospectScore') as string;
-    const prospectScore = prospectScoreValue === '' ? undefined : prospectScoreValue;
-    
+    const prospectScoreRaw = formData.get('prospectScore') as string;
     const memo = formData.get('memo') as string;
 
-    // 必須項目のチェック
-    if (!name.trim()) {
-      alert('会社名は必須です。');
-      return;
-    }
-    
-    if (!representativeId) {
-      alert('担当者を選択してください。');
-      return;
-    }
+    // 必須項目は会社名のみ
+    if (!name) return;
+
+    // 見込み度の処理（空文字列の場合はundefinedに）
+    const prospectScore = prospectScoreRaw && prospectScoreRaw.trim() !== '' ? prospectScoreRaw : undefined;
 
     const updatedCompany: Company = {
       ...editingCompany,
-      name: name.trim(),
-      contactPerson: contactPerson.trim() || '未設定',
-      department: department.trim() || '未設定',
-      position: position.trim() || '未設定',
-      email: email.trim(),
-      phoneNumber: phoneNumber.trim(),
-      representativeId,
+      name,
+      contactPerson: contactPerson || '未設定',
+      department: department || '未設定',
+      position: position || '未設定',
+      email: email || '',
+      phoneNumber: phoneNumber || '',
+      representativeId: representativeId || editingCompany.representativeId,
       listId: listId || undefined,
       prospectScore,
-      memo: memo.trim() || undefined,
+      memo: memo || undefined,
       updatedAt: new Date(),
     };
 
@@ -1864,7 +1846,7 @@ function CompanyListContent() {
                   <input
                     type="text"
                     name="contactPerson"
-                    placeholder="未設定の場合は空にしてください"
+                    placeholder="未設定の場合は空欄のまま"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -1873,7 +1855,7 @@ function CompanyListContent() {
                   <input
                     type="text"
                     name="department"
-                    placeholder="未設定の場合は空にしてください"
+                    placeholder="未設定の場合は空欄のまま"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -1882,7 +1864,7 @@ function CompanyListContent() {
                   <input
                     type="text"
                     name="position"
-                    placeholder="未設定の場合は空にしてください"
+                    placeholder="未設定の場合は空欄のまま"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -1891,7 +1873,7 @@ function CompanyListContent() {
                   <input
                     type="email"
                     name="email"
-                    placeholder="メールアドレス（任意）"
+                    placeholder="未設定の場合は空欄のまま"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -1900,7 +1882,7 @@ function CompanyListContent() {
                   <input
                     type="tel"
                     name="phoneNumber"
-                    placeholder="電話番号（任意）"
+                    placeholder="未設定の場合は空欄のまま"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -2002,7 +1984,7 @@ function CompanyListContent() {
                     type="text"
                     name="contactPerson"
                     defaultValue={editingCompany.contactPerson}
-                    placeholder="未設定の場合は空にしてください"
+                    placeholder="未設定の場合は空欄のまま"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -2012,7 +1994,7 @@ function CompanyListContent() {
                     type="text"
                     name="department"
                     defaultValue={editingCompany.department}
-                    placeholder="未設定の場合は空にしてください"
+                    placeholder="未設定の場合は空欄のまま"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -2022,7 +2004,7 @@ function CompanyListContent() {
                     type="text"
                     name="position"
                     defaultValue={editingCompany.position}
-                    placeholder="未設定の場合は空にしてください"
+                    placeholder="未設定の場合は空欄のまま"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -2032,7 +2014,7 @@ function CompanyListContent() {
                     type="email"
                     name="email"
                     defaultValue={editingCompany.email}
-                    placeholder="メールアドレス（任意）"
+                    placeholder="未設定の場合は空欄のまま"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -2042,7 +2024,7 @@ function CompanyListContent() {
                     type="tel"
                     name="phoneNumber"
                     defaultValue={editingCompany.phoneNumber}
-                    placeholder="電話番号（任意）"
+                    placeholder="未設定の場合は空欄のまま"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>

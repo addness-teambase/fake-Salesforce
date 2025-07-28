@@ -407,11 +407,17 @@ function CompanyListContent() {
   };
 
   // 条件による一括選択
-  const handleSelectByCondition = useCallback((condition: 'representative' | 'all-visible' | 'all-in-tab') => {
+  const handleSelectByCondition = useCallback((condition: 'representative' | 'list' | 'all-visible' | 'all-in-tab') => {
     if (condition === 'representative' && columnFilters.representative.size > 0) {
       const representativeIds = Array.from(columnFilters.representative);
       const companiesByRep = state.companies.filter(c => representativeIds.includes(c.representativeId));
       setSelectedCompanies(companiesByRep.map(c => c.id));
+    } else if (condition === 'list' && columnFilters.list.size > 0) {
+      const listIds = Array.from(columnFilters.list);
+      const companiesByList = state.companies.filter(c => {
+        return listIds.includes(c.listId || 'unassigned');
+      });
+      setSelectedCompanies(companiesByList.map(c => c.id));
     } else if (condition === 'all-visible') {
       setSelectedCompanies(filteredCompanies.map(c => c.id));
     } else if (condition === 'all-in-tab') {
@@ -422,7 +428,7 @@ function CompanyListContent() {
       setSelectedCompanies(companiesInTab.map(c => c.id));
     }
     setShowBulkActions(false);
-  }, [columnFilters.representative, state.companies, filteredCompanies, activeListTab]);
+  }, [columnFilters.representative, columnFilters.list, state.companies, filteredCompanies, activeListTab]);
 
   // 個別選択
   const handleSelectCompany = (companyId: string, checked: boolean, index?: number) => {
@@ -706,7 +712,7 @@ function CompanyListContent() {
     const phoneNumber = formData.get('phoneNumber') as string;
     const representativeId = formData.get('representativeId') as string;
     const listId = formData.get('listId') as string;
-          const prospectScore = (formData.get('prospectScore') as string) || editingCompany.prospectScore || undefined;
+    const prospectScore = (formData.get('prospectScore') as string) || editingCompany.prospectScore || undefined;
     const memo = formData.get('memo') as string;
 
     if (!name || !contactPerson || !department || !position || !email || !phoneNumber || !representativeId) return;
@@ -734,6 +740,25 @@ function CompanyListContent() {
   const handleDeleteCompany = (id: string) => {
     if (confirm('この企業を削除しますか？関連する活動記録と商談も全て削除されます。')) {
       dispatch({ type: 'DELETE_COMPANY', payload: id });
+    }
+  };
+
+  // 選択した企業を一括削除
+  const handleBulkDelete = () => {
+    if (selectedCompanies.length === 0) return;
+
+    const selectedCompanyDetails = selectedCompanies.map(id =>
+      state.companies.find(c => c.id === id)
+    ).filter(c => c !== undefined);
+
+    const companyNames = selectedCompanyDetails.map(c => c.name).join('\n・ ');
+    const confirmMessage = `以下の ${selectedCompanies.length} 社を削除しますか？\n関連する活動記録と商談も全て削除されます。\n\n・ ${companyNames}`;
+
+    if (confirm(confirmMessage)) {
+      selectedCompanies.forEach(id => {
+        dispatch({ type: 'DELETE_COMPANY', payload: id });
+      });
+      setSelectedCompanies([]);
     }
   };
 
@@ -1176,6 +1201,15 @@ function CompanyListContent() {
                       ))}
                     </select>
                   </div>
+                  <button
+                    onClick={handleBulkDelete}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center gap-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    一括削除
+                  </button>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -2112,6 +2146,14 @@ function CompanyListContent() {
                                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                   >
                                     フィルター担当者の企業を全選択
+                                  </button>
+                                )}
+                                {columnFilters.list.size > 0 && (
+                                  <button
+                                    onClick={() => handleSelectByCondition('list')}
+                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                  >
+                                    フィルターリストの企業を全選択
                                   </button>
                                 )}
                                 <hr className="my-1" />

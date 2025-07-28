@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS companies (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 4. 活动記録テーブル
+-- 4. 活動記録テーブル
 CREATE TABLE IF NOT EXISTS activities (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,

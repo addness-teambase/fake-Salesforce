@@ -1,9 +1,9 @@
-import { typedSupabase, isSupabaseConfigured, DatabaseCompany, DatabaseActivity, DatabaseRepresentative, DatabaseList } from './supabase'
-import { Company, Activity, Representative, List } from '@/types'
+import { typedSupabase, isSupabaseConfigured, DatabaseCompany, DatabaseActivity, DatabaseRepresentative, DatabaseList, DatabaseUser } from './supabase'
+import { Company, Activity, Representative, List, User } from '@/types'
 
 // Supabaseが設定されていない場合のエラー
 const throwSupabaseNotConfigured = () => {
-  throw new Error('Supabaseが設定されていません。SUPABASE_SETUP.mdを参照してセットアップを完了してください。')
+    throw new Error('Supabaseが設定されていません。SUPABASE_SETUP.mdを参照してセットアップを完了してください。')
 }
 
 // 型変換ヘルパー関数
@@ -45,7 +45,7 @@ const convertDatabaseActivityToActivity = (dbActivity: DatabaseActivity): Activi
     content: dbActivity.content,
     amount: dbActivity.amount || undefined,
     probability: dbActivity.probability || undefined,
-    status: dbActivity.status as Activity['status'] || undefined,
+    status: (dbActivity.status as Activity['status']) || undefined,
     nextAction: dbActivity.next_action || undefined,
     nextActionDate: dbActivity.next_action_date ? new Date(dbActivity.next_action_date) : undefined,
     createdAt: new Date(dbActivity.created_at),
@@ -83,42 +83,42 @@ const convertDatabaseListToList = (dbList: DatabaseList): List => ({
 
 // 企業データのCRUD操作
 export const companyService = {
-  // 全企業を取得
-  async getAll(): Promise<Company[]> {
-    if (!isSupabaseConfigured() || !typedSupabase) {
-      throwSupabaseNotConfigured()
-    }
+    // 全企業を取得
+    async getAll(): Promise<Company[]> {
+        if (!isSupabaseConfigured() || !typedSupabase) {
+            throwSupabaseNotConfigured()
+        }
 
-    const { data, error } = await typedSupabase
-      .from('companies')
-      .select('*')
-      .order('created_at', { ascending: false })
+        const { data, error } = await typedSupabase
+            .from('companies')
+            .select('*')
+            .order('created_at', { ascending: false })
 
-    if (error) throw error
-    return data?.map(convertDatabaseCompanyToCompany) || []
-  },
+        if (error) throw error
+        return data?.map(convertDatabaseCompanyToCompany) || []
+    },
 
-      // 企業を追加
-  async add(company: Omit<Company, 'id' | 'createdAt' | 'updatedAt'>): Promise<Company> {
-    if (!isSupabaseConfigured() || !typedSupabase) {
-      throwSupabaseNotConfigured()
-    }
+    // 企業を追加
+    async add(company: Omit<Company, 'id' | 'createdAt' | 'updatedAt'>): Promise<Company> {
+        if (!isSupabaseConfigured() || !typedSupabase) {
+            throwSupabaseNotConfigured()
+        }
 
-    const { data, error } = await typedSupabase
-      .from('companies')
-      .insert(convertCompanyToDatabaseInsert(company))
-      .select()
-      .single()
+        const { data, error } = await typedSupabase
+            .from('companies')
+            .insert(convertCompanyToDatabaseInsert(company))
+            .select()
+            .single()
 
-    if (error) throw error
-    return convertDatabaseCompanyToCompany(data)
-  },
+        if (error) throw error
+        return convertDatabaseCompanyToCompany(data)
+    },
 
-  // 企業を更新
-  async update(id: string, company: Partial<Omit<Company, 'id' | 'createdAt'>>): Promise<Company> {
-    if (!isSupabaseConfigured() || !typedSupabase) {
-      throwSupabaseNotConfigured()
-    }
+    // 企業を更新
+    async update(id: string, company: Partial<Omit<Company, 'id' | 'createdAt'>>): Promise<Company> {
+        if (!isSupabaseConfigured() || !typedSupabase) {
+            throwSupabaseNotConfigured()
+        }
         const updateData: any = {}
         if (company.name) updateData.name = company.name
         if (company.contactPerson) updateData.contact_person = company.contactPerson
@@ -142,25 +142,29 @@ export const companyService = {
         return convertDatabaseCompanyToCompany(data)
     },
 
-      // 企業を削除
-  async delete(id: string): Promise<void> {
-    if (!isSupabaseConfigured() || !typedSupabase) {
-      throwSupabaseNotConfigured()
-    }
+    // 企業を削除
+    async delete(id: string): Promise<void> {
+        if (!isSupabaseConfigured() || !typedSupabase) {
+            throwSupabaseNotConfigured()
+        }
 
-    const { error } = await typedSupabase
-      .from('companies')
-      .delete()
-      .eq('id', id)
+        const { error } = await typedSupabase
+            .from('companies')
+            .delete()
+            .eq('id', id)
 
-    if (error) throw error
-  },
+        if (error) throw error
+    },
 }
 
 // 活動データのCRUD操作
 export const activityService = {
     // 全活動を取得
     async getAll(): Promise<Activity[]> {
+        if (!isSupabaseConfigured() || !typedSupabase) {
+            throwSupabaseNotConfigured()
+        }
+
         const { data, error } = await typedSupabase
             .from('activities')
             .select('*')
@@ -172,6 +176,10 @@ export const activityService = {
 
     // 企業IDで活動を取得
     async getByCompanyId(companyId: string): Promise<Activity[]> {
+        if (!isSupabaseConfigured() || !typedSupabase) {
+            throwSupabaseNotConfigured()
+        }
+
         const { data, error } = await typedSupabase
             .from('activities')
             .select('*')
@@ -339,5 +347,170 @@ export const listService = {
             .eq('id', id)
 
         if (error) throw error
+    },
+}
+
+// =================================================
+// ユーザー管理サービス
+// =================================================
+
+// 型変換ヘルパー関数
+const convertDatabaseUserToUser = (dbUser: DatabaseUser): User => ({
+    id: dbUser.id,
+    email: dbUser.email,
+    name: dbUser.name,
+    createdAt: new Date(dbUser.created_at),
+    updatedAt: new Date(dbUser.updated_at),
+})
+
+// パスワードハッシュ化（簡単な実装）
+const hashPassword = async (password: string): Promise<string> => {
+    // 本番環境では bcryptやscrypt などの適切なハッシュライブラリを使用
+    const encoder = new TextEncoder()
+    const data = encoder.encode(password + 'fake-salesforce-salt')
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+// パスワード検証
+const verifyPassword = async (password: string, hash: string): Promise<boolean> => {
+    const passwordHash = await hashPassword(password)
+    return passwordHash === hash
+}
+
+export const userService = {
+    // ユーザー新規登録
+    async register(userData: { email: string; password: string; name: string }): Promise<User> {
+        if (!isSupabaseConfigured() || !typedSupabase) {
+            throwSupabaseNotConfigured()
+        }
+
+        try {
+            const passwordHash = await hashPassword(userData.password)
+
+            const { data, error } = await typedSupabase
+                .from('users')
+                .insert([{
+                    email: userData.email,
+                    password_hash: passwordHash,
+                    name: userData.name,
+                }])
+                .select()
+                .single()
+
+            if (error) {
+                console.error('Supabase registration error details:', {
+                    error,
+                    message: error.message,
+                    code: error.code,
+                    details: error.details,
+                    hint: error.hint,
+                    errorData: JSON.stringify(error)
+                })
+
+                // より具体的なエラーメッセージ
+                if (error.code === '42P01') {
+                    throw new Error('usersテーブルが存在しません。データベースのセットアップSQLを実行してください。')
+                } else if (error.code === '23505') {
+                    throw new Error('このメールアドレスは既に登録されています。')
+                } else if (error.message) {
+                    throw new Error(`データベースエラー: ${error.message} (コード: ${error.code || 'unknown'})`)
+                } else {
+                    throw new Error('データベース接続に失敗しました。設定を確認してください。')
+                }
+            }
+
+            if (!data) {
+                throw new Error('ユーザー登録は成功しましたが、データが返されませんでした')
+            }
+
+            return convertDatabaseUserToUser(data as DatabaseUser)
+        } catch (error: any) {
+            // 既に投げられたエラーの場合はそのまま再投げ
+            if (error.message?.includes('データベースエラー:') ||
+                error.message?.includes('usersテーブルが存在しません') ||
+                error.message?.includes('このメールアドレス')) {
+                throw error
+            }
+            // その他のエラー（ネットワークエラーなど）
+            console.error('User registration error:', error)
+            throw new Error(`ユーザー登録に失敗しました: ${error.message}`)
+        }
+    },
+
+    // ユーザーログイン認証
+    async authenticate(email: string, password: string): Promise<User | null> {
+        if (!isSupabaseConfigured() || !typedSupabase) {
+            throwSupabaseNotConfigured()
+        }
+
+        try {
+            const { data, error } = await typedSupabase
+                .from('users')
+                .select('*')
+                .eq('email', email)
+                .single()
+
+            if (error && error.code !== 'PGRST116') {
+                console.error('User authentication error:', error)
+                throw new Error('認証処理でエラーが発生しました')
+            }
+
+            if (!data) return null
+
+            const dbUser = data as DatabaseUser
+            const isPasswordValid = await verifyPassword(password, dbUser.password_hash)
+
+            if (!isPasswordValid) return null
+
+            return convertDatabaseUserToUser(dbUser)
+        } catch (error: any) {
+            console.error('Authentication error:', error)
+            return null
+        }
+    },
+
+    // メールアドレスでユーザー検索
+    async findByEmail(email: string): Promise<User | null> {
+        if (!isSupabaseConfigured() || !typedSupabase) {
+            throwSupabaseNotConfigured()
+        }
+
+        try {
+            const { data, error } = await typedSupabase
+                .from('users')
+                .select('id, email, name, created_at, updated_at')
+                .eq('email', email)
+                .single()
+
+            if (error && error.code !== 'PGRST116') {
+                console.error('Find user error:', error)
+                return null
+            }
+
+            if (!data) return null
+            return convertDatabaseUserToUser(data as DatabaseUser)
+        } catch (error: any) {
+            console.error('Find user error:', error)
+            return null
+        }
+    },
+
+    // ユーザー情報更新
+    async update(id: string, userData: Partial<Pick<User, 'name' | 'email'>>): Promise<User> {
+        if (!isSupabaseConfigured() || !typedSupabase) {
+            throwSupabaseNotConfigured()
+        }
+
+        const { data, error } = await typedSupabase
+            .from('users')
+            .update(userData)
+            .eq('id', id)
+            .select('id, email, name, created_at, updated_at')
+            .single()
+
+        if (error) throw error
+        return convertDatabaseUserToUser(data as DatabaseUser)
     },
 } 

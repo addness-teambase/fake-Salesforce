@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useApp, generateId } from '@/context/AppContext';
+import { useApp } from '@/context/AppContext';
+import { generateId } from '@/lib/utils';
 import { Activity, Deal } from '@/types';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';

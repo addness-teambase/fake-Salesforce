@@ -31,36 +31,7 @@ const demoRepresentatives: Representative[] = [
     },
 ];
 
-const demoLists: List[] = [
-    {
-        id: 'list-1',
-        name: 'IT展示会2024',
-        description: '2024年のIT展示会で名刺交換した企業',
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-    },
-    {
-        id: 'list-2',
-        name: 'ビジネス交流会',
-        description: '地域ビジネス交流会で出会った企業',
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-    },
-    {
-        id: 'list-3',
-        name: 'セミナー参加企業',
-        description: '自社主催セミナーに参加された企業',
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-    },
-    {
-        id: 'list-4',
-        name: 'ウェブからの問い合わせ',
-        description: 'ホームページからお問い合わせいただいた企業',
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-    },
-];
+// デモリストは削除（デフォルトリストのみ使用）
 
 const demoCompanies: Company[] = [
     {
@@ -72,7 +43,7 @@ const demoCompanies: Company[] = [
         email: 'tanaka@sample-shooji.co.jp',
         phoneNumber: '03-1234-5678',
         representativeId: 'rep-1',
-        listId: 'list-1',
+        listId: '00000000-0000-0000-0000-000000000002',
         prospectScore: 'A',
         memo: 'IT展示会で名刺交換。基幹システムの更新を検討中。予算確保済み。',
         createdAt: new Date('2024-01-15'),
@@ -87,7 +58,7 @@ const demoCompanies: Company[] = [
         email: 'sato@tech-innovation.co.jp',
         phoneNumber: '06-9876-5432',
         representativeId: 'rep-2',
-        listId: 'list-2',
+        listId: '00000000-0000-0000-0000-000000000002',
         prospectScore: 'C',
         memo: 'ビジネス交流会で出会ったスタートアップ。AI・IoT分野で成長中。',
         createdAt: new Date('2024-02-01'),
@@ -102,7 +73,7 @@ const demoCompanies: Company[] = [
         email: 'yamada@yamada-seizo.co.jp',
         phoneNumber: '052-1111-2222',
         representativeId: 'rep-3',
-        listId: 'list-3',
+        listId: '00000000-0000-0000-0000-000000000002',
         prospectScore: 'S',
         memo: 'セミナー後に個別相談あり。製造業DX化の具体的なニーズあり。',
         createdAt: new Date('2024-02-10'),
@@ -367,62 +338,8 @@ export function AppProvider({ children }: AppProviderProps) {
                     listService.getAll(),
                 ]);
 
-                // データが空の場合はデモリストを追加
-                if (lists.length === 0) {
-                    const demoListsData = [
-                        { name: 'IT展示会2024', description: '2024年のIT展示会で名刺交換した企業' },
-                        { name: 'ビジネス交流会', description: '地域ビジネス交流会で出会った企業' },
-                        { name: 'セミナー参加企業', description: '自社主催セミナーに参加された企業' },
-                        { name: 'ウェブからの問い合わせ', description: 'ホームページからお問い合わせいただいた企業' },
-                    ];
-
-                    for (const listData of demoListsData) {
-                        await listService.add(listData);
-                    }
-
-                    // リストを再取得
-                    const updatedLists = await listService.getAll();
-
-                    // 仮想リストを追加（データベースには保存しない）
-                    const virtualLists = [
-                        {
-                            id: 'virtual-met',
-                            name: '【商談済み企業】',
-                            description: '一度でも商談を実施した企業',
-                            createdAt: new Date(),
-                            updatedAt: new Date(),
-                        },
-                        {
-                            id: 'virtual-not-met',
-                            name: '【商談未実施企業】',
-                            description: 'まだ商談を実施していない企業（電話・メールのみ）',
-                            createdAt: new Date(),
-                            updatedAt: new Date(),
-                        },
-                    ];
-
-                    dispatch({ type: 'SET_LISTS', payload: [...updatedLists, ...virtualLists] });
-                } else {
-                    // 仮想リストを追加（データベースには保存しない）
-                    const virtualLists = [
-                        {
-                            id: 'virtual-met',
-                            name: '【商談済み企業】',
-                            description: '一度でも商談を実施した企業',
-                            createdAt: new Date(),
-                            updatedAt: new Date(),
-                        },
-                        {
-                            id: 'virtual-not-met',
-                            name: '【商談未実施企業】',
-                            description: 'まだ商談を実施していない企業（電話・メールのみ）',
-                            createdAt: new Date(),
-                            updatedAt: new Date(),
-                        },
-                    ];
-
-                    dispatch({ type: 'SET_LISTS', payload: [...lists, ...virtualLists] });
-                }
+                // データベースから取得したリストをそのまま使用（デフォルトリスト：「全体」「未分類」のみ）
+                dispatch({ type: 'SET_LISTS', payload: lists });
 
                 dispatch({ type: 'SET_COMPANIES', payload: companies });
                 dispatch({ type: 'SET_ACTIVITIES', payload: activities });
@@ -431,19 +348,19 @@ export function AppProvider({ children }: AppProviderProps) {
                 // Supabaseが設定されていない場合はデモデータを使用
                 console.log('Supabase未設定: デモデータで動作します');
 
-                // 仮想リストを追加
-                const virtualLists = [
+                // デフォルトリストのみ使用（UUIDに対応）
+                const defaultLists = [
                     {
-                        id: 'virtual-met',
-                        name: '【商談済み企業】',
-                        description: '一度でも商談を実施した企業',
+                        id: '00000000-0000-0000-0000-000000000001',
+                        name: '全体',
+                        description: 'すべての企業を表示',
                         createdAt: new Date(),
                         updatedAt: new Date(),
                     },
                     {
-                        id: 'virtual-not-met',
-                        name: '【商談未実施企業】',
-                        description: 'まだ商談を実施していない企業（電話・メールのみ）',
+                        id: '00000000-0000-0000-0000-000000000002',
+                        name: '未分類',
+                        description: '分類されていない企業',
                         createdAt: new Date(),
                         updatedAt: new Date(),
                     },
@@ -452,7 +369,7 @@ export function AppProvider({ children }: AppProviderProps) {
                 dispatch({ type: 'SET_COMPANIES', payload: demoCompanies });
                 dispatch({ type: 'SET_ACTIVITIES', payload: demoActivities });
                 dispatch({ type: 'SET_REPRESENTATIVES', payload: demoRepresentatives });
-                dispatch({ type: 'SET_LISTS', payload: [...demoLists, ...virtualLists] });
+                dispatch({ type: 'SET_LISTS', payload: defaultLists });
             }
 
 
@@ -496,7 +413,7 @@ export function AppProvider({ children }: AppProviderProps) {
                         const newCompany = await companyService.add(action.payload);
                         dispatch({ type: 'ADD_COMPANY', payload: newCompany });
                         break;
-                                        case 'UPDATE_COMPANY':
+                    case 'UPDATE_COMPANY':
                         const updatedCompany = await companyService.update(action.payload.id, action.payload);
                         dispatch({ type: 'UPDATE_COMPANY', payload: updatedCompany });
                         break;
@@ -549,30 +466,30 @@ export function AppProvider({ children }: AppProviderProps) {
                 // Supabaseが設定されていない場合は従来のロジック（ローカル状態のみ更新）
                 dispatch(action);
             }
-            } catch (err) {
-                console.error('データベース操作でエラーが発生しました:', err);
-                setError('データベース操作でエラーが発生しました。');
-            }
-        };
-
-        return (
-            <AppContext.Provider value={{
-                state: { ...state, isLoading, error },
-                dispatch: supabaseDispatch,
-                loadData
-            }}>
-                {children}
-            </AppContext.Provider>
-        );
-    }
-
-    // Custom Hook
-    export function useApp() {
-        const context = useContext(AppContext);
-        if (context === undefined) {
-            throw new Error('useApp must be used within an AppProvider');
+        } catch (err) {
+            console.error('データベース操作でエラーが発生しました:', err);
+            setError('データベース操作でエラーが発生しました。');
         }
-        return context;
+    };
+
+    return (
+        <AppContext.Provider value={{
+            state: { ...state, isLoading, error },
+            dispatch: supabaseDispatch,
+            loadData
+        }}>
+            {children}
+        </AppContext.Provider>
+    );
+}
+
+// Custom Hook
+export function useApp() {
+    const context = useContext(AppContext);
+    if (context === undefined) {
+        throw new Error('useApp must be used within an AppProvider');
     }
+    return context;
+}
 
 // ヘルパー関数をライブラリに移動 

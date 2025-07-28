@@ -12,21 +12,7 @@ import LoadingFallback from '@/components/LoadingFallback';
 function CompanyListContent() {
   const { state, dispatch, loadData } = useApp();
 
-  // ローディング状態やエラー状態をチェック
-  if (state.isLoading || state.error) {
-    return (
-      <LoadingFallback
-        isLoading={state.isLoading || false}
-        error={state.error || null}
-        onRetry={loadData}
-        onUseDemoData={() => {
-          // .env.localファイルの設定を削除してデモデータで続行
-          console.log('デモデータで続行します');
-          window.location.reload(); // ページをリロードしてデモデータで起動
-        }}
-      />
-    );
-  }
+  // React Hooksは条件分岐より前に呼ぶ必要がある
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [showCsvImport, setShowCsvImport] = useState(false);
@@ -87,6 +73,22 @@ function CompanyListContent() {
 
   // 企業詳細表示
   const [selectedCompanyDetail, setSelectedCompanyDetail] = useState<Company | null>(null);
+
+  // ローディング状態やエラー状態をチェック（全てのHooksの後に配置）
+  if (state.isLoading || state.error) {
+    return (
+      <LoadingFallback
+        isLoading={state.isLoading || false}
+        error={state.error || null}
+        onRetry={loadData}
+        onUseDemoData={() => {
+          // .env.localファイルの設定を削除してデモデータで続行
+          console.log('デモデータで続行します');
+          window.location.reload(); // ページをリロードしてデモデータで起動
+        }}
+      />
+    );
+  }
 
   // 商談実施状況を判定（商談の活動があるかチェック）
   const hasNegotiationActivity = (companyId: string) => {

@@ -41,7 +41,7 @@ export default function LoginForm() {
         } catch (error: unknown) {
             const errorObj = error as Error & { code?: string };
             console.error('Login error:', error);
-            
+
             if (errorObj.message?.includes('usersテーブルが存在しません') || errorObj.code === '42P01') {
                 setError('データベースが初期化されていません。complete-setup.sqlを実行してください。');
             } else if (errorObj.message) {
@@ -90,7 +90,7 @@ export default function LoginForm() {
         try {
             const user = await userService.register({
                 email: email.trim(),
-                password,  
+                password,
                 name: name.trim(),
             });
 
@@ -106,7 +106,7 @@ export default function LoginForm() {
                 details: errorObj?.details,
                 hint: errorObj?.hint
             });
-            
+
             // より詳細なエラーハンドリング
             if (errorObj.message?.includes('duplicate') || errorObj.code === '23505') {
                 setError('このメールアドレスは既に登録されています。ログインタブから既存アカウントでログインしてください。');
@@ -145,8 +145,8 @@ export default function LoginForm() {
                                 type="button"
                                 onClick={() => setIsRegistering(false)}
                                 className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${!isRegistering
-                                        ? 'bg-white text-blue-600 shadow-sm'
-                                        : 'text-gray-500 hover:text-gray-700'
+                                    ? 'bg-white text-blue-600 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700'
                                     }`}
                             >
                                 ログイン
@@ -155,8 +155,8 @@ export default function LoginForm() {
                                 type="button"
                                 onClick={() => setIsRegistering(true)}
                                 className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${isRegistering
-                                        ? 'bg-white text-blue-600 shadow-sm'
-                                        : 'text-gray-500 hover:text-gray-700'
+                                    ? 'bg-white text-blue-600 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700'
                                     }`}
                             >
                                 新規登録
@@ -293,6 +293,26 @@ export default function LoginForm() {
                             </p>
                         </div>
                     </div>
+
+                    {/* デバッグ情報表示（開発環境またはSupabase未設定時のみ） */}
+                    {(process.env.NODE_ENV === 'development' || !isSupabaseConfigured()) && (
+                        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                            <div className="text-xs text-yellow-800">
+                                <p className="font-medium mb-1">🔧 デバッグ情報</p>
+                                <div className="space-y-1">
+                                    <div>環境: {process.env.NODE_ENV || 'unknown'}</div>
+                                    <div>Supabase URL: {process.env.NEXT_PUBLIC_SUPABASE_URL ? '✅ 設定済み' : '❌ 未設定'}</div>
+                                    <div>Supabase Key: {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✅ 設定済み' : '❌ 未設定'}</div>
+                                    <div>設定状態: {isSupabaseConfigured() ? '✅ 正常' : '❌ 不正または未設定'}</div>
+                                    {process.env.NODE_ENV === 'production' && (
+                                        <div className="text-red-600 font-medium">
+                                            本番環境でSupabase未設定: Vercelの環境変数を確認してください
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

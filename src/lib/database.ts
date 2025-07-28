@@ -124,11 +124,12 @@ export const companyService = {
         if (company.contactPerson) updateData.contact_person = company.contactPerson
         if (company.department) updateData.department = company.department
         if (company.position) updateData.position = company.position
-        if (company.email) updateData.email = company.email
-        if (company.phoneNumber) updateData.phone_number = company.phoneNumber
+        if (company.email !== undefined) updateData.email = company.email
+        if (company.phoneNumber !== undefined) updateData.phone_number = company.phoneNumber
         if (company.representativeId) updateData.representative_id = company.representativeId
         if (company.listId !== undefined) updateData.list_id = company.listId
-        if (company.prospectScore) updateData.prospect_score = company.prospectScore
+        // 見込み度も未設定（undefined/null）を許可
+        if (company.prospectScore !== undefined) updateData.prospect_score = company.prospectScore
         if (company.memo !== undefined) updateData.memo = company.memo
 
         const { data, error } = await typedSupabase!

@@ -823,23 +823,36 @@ function CompanyListContent() {
     const phoneNumber = formData.get('phoneNumber') as string;
     const representativeId = formData.get('representativeId') as string;
     const listId = formData.get('listId') as string;
-    const prospectScore = (formData.get('prospectScore') as string) || undefined;
+    
+    // 見込み度の適切な処理（空文字列の場合はundefinedに設定）
+    const prospectScoreValue = formData.get('prospectScore') as string;
+    const prospectScore = prospectScoreValue === '' ? undefined : prospectScoreValue;
+    
     const memo = formData.get('memo') as string;
 
-    if (!name || !contactPerson || !department || !position || !email || !phoneNumber || !representativeId) return;
+    // 必須項目のチェック
+    if (!name.trim()) {
+      alert('会社名は必須です。');
+      return;
+    }
+    
+    if (!representativeId) {
+      alert('担当者を選択してください。');
+      return;
+    }
 
     const newCompany: Company = {
       id: generateId(),
-      name,
-      contactPerson,
-      department,
-      position,
-      email,
-      phoneNumber,
+      name: name.trim(),
+      contactPerson: contactPerson.trim() || '未設定',
+      department: department.trim() || '未設定',
+      position: position.trim() || '未設定',
+      email: email.trim(),
+      phoneNumber: phoneNumber.trim(),
       representativeId,
       listId: listId || undefined,
       prospectScore,
-      memo: memo || undefined,
+      memo: memo.trim() || undefined,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -860,23 +873,36 @@ function CompanyListContent() {
     const phoneNumber = formData.get('phoneNumber') as string;
     const representativeId = formData.get('representativeId') as string;
     const listId = formData.get('listId') as string;
-    const prospectScore = (formData.get('prospectScore') as string) || editingCompany.prospectScore || undefined;
+    
+    // 見込み度の適切な処理（空文字列の場合はundefinedに設定）
+    const prospectScoreValue = formData.get('prospectScore') as string;
+    const prospectScore = prospectScoreValue === '' ? undefined : prospectScoreValue;
+    
     const memo = formData.get('memo') as string;
 
-    if (!name || !contactPerson || !department || !position || !email || !phoneNumber || !representativeId) return;
+    // 必須項目のチェック
+    if (!name.trim()) {
+      alert('会社名は必須です。');
+      return;
+    }
+    
+    if (!representativeId) {
+      alert('担当者を選択してください。');
+      return;
+    }
 
     const updatedCompany: Company = {
       ...editingCompany,
-      name,
-      contactPerson,
-      department,
-      position,
-      email,
-      phoneNumber,
+      name: name.trim(),
+      contactPerson: contactPerson.trim() || '未設定',
+      department: department.trim() || '未設定',
+      position: position.trim() || '未設定',
+      email: email.trim(),
+      phoneNumber: phoneNumber.trim(),
       representativeId,
       listId: listId || undefined,
       prospectScore,
-      memo: memo || undefined,
+      memo: memo.trim() || undefined,
       updatedAt: new Date(),
     };
 
@@ -1834,47 +1860,47 @@ function CompanyListContent() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">名前（顧客担当者） *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">名前（顧客担当者）</label>
                   <input
                     type="text"
                     name="contactPerson"
-                    required
+                    placeholder="未設定の場合は空にしてください"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">部署 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">部署</label>
                   <input
                     type="text"
                     name="department"
-                    required
+                    placeholder="未設定の場合は空にしてください"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">役職 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">役職</label>
                   <input
                     type="text"
                     name="position"
-                    required
+                    placeholder="未設定の場合は空にしてください"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">電子メール *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">電子メール</label>
                   <input
                     type="email"
                     name="email"
-                    required
+                    placeholder="メールアドレス（任意）"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">電話番号 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">電話番号</label>
                   <input
                     type="tel"
                     name="phoneNumber"
-                    required
+                    placeholder="電話番号（任意）"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -1971,52 +1997,52 @@ function CompanyListContent() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">名前（顧客担当者） *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">名前（顧客担当者）</label>
                   <input
                     type="text"
                     name="contactPerson"
                     defaultValue={editingCompany.contactPerson}
-                    required
+                    placeholder="未設定の場合は空にしてください"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">部署 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">部署</label>
                   <input
                     type="text"
                     name="department"
                     defaultValue={editingCompany.department}
-                    required
+                    placeholder="未設定の場合は空にしてください"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">役職 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">役職</label>
                   <input
                     type="text"
                     name="position"
                     defaultValue={editingCompany.position}
-                    required
+                    placeholder="未設定の場合は空にしてください"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">電子メール *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">電子メール</label>
                   <input
                     type="email"
                     name="email"
                     defaultValue={editingCompany.email}
-                    required
+                    placeholder="メールアドレス（任意）"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">電話番号 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">電話番号</label>
                   <input
                     type="tel"
                     name="phoneNumber"
                     defaultValue={editingCompany.phoneNumber}
-                    required
+                    placeholder="電話番号（任意）"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>

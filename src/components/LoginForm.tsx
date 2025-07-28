@@ -14,55 +14,41 @@ export default function LoginForm() {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    // デモ用ユーザーアカウント（Supabase未設定時のみ使用）
-    const demoUsers = [
-        { email: 'admin@company.co.jp', password: 'admin123', name: '管理者' },
-        { email: 'sales@company.co.jp', password: 'sales123', name: '営業担当' },
-        { email: 'manager@company.co.jp', password: 'manager123', name: 'マネージャー' },
-    ];
+    // 新規登録とログインの処理
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setIsLoading(true);
 
+        if (!isSupabaseConfigured()) {
+            setError('ログイン機能を使用するにはSupabaseの設定が必要です。SUPABASE_SETUP.mdを参照してください。');
+            setIsLoading(false);
+            return;
+        }
+
         dispatch({ type: 'LOGIN_START' });
 
         try {
-            let user = null;
-
-            // Supabaseが設定されている場合は実際の認証を使用
-            if (isSupabaseConfigured()) {
-                user = await userService.authenticate(email, password);
-                if (!user) {
-                    setError('メールアドレスまたはパスワードが正しくありません');
-                    dispatch({ type: 'LOGIN_FAILURE' });
-                    return;
-                }
-            } else {
-                // Supabase未設定時はデモ認証
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                const demoUser = demoUsers.find(u => u.email === email && u.password === password);
-
-                if (demoUser) {
-                    user = {
-                        id: `user-${Date.now()}`,
-                        email: demoUser.email,
-                        name: demoUser.name,
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                    };
-                } else {
-                    setError('メールアドレスまたはパスワードが正しくありません');
-                    dispatch({ type: 'LOGIN_FAILURE' });
-                    return;
-                }
+            const user = await userService.authenticate(email, password);
+            if (!user) {
+                setError('メールアドレスまたはパスワードが正しくありません。アカウントが存在しない場合は新規登録してください。');
+                dispatch({ type: 'LOGIN_FAILURE' });
+                return;
             }
 
             dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-        } catch (error) {
+        } catch (error: unknown) {
+            const errorObj = error as Error & { code?: string };
             console.error('Login error:', error);
-            setError('ログインに失敗しました');
+            
+            if (errorObj.message?.includes('usersテーブルが存在しません') || errorObj.code === '42P01') {
+                setError('データベースが初期化されていません。complete-setup.sqlを実行してください。');
+            } else if (errorObj.message) {
+                setError(`ログインエラー: ${errorObj.message}`);
+            } else {
+                setError('ログインに失敗しました。設定を確認してください。');
+            }
             dispatch({ type: 'LOGIN_FAILURE' });
         } finally {
             setIsLoading(false);
@@ -74,8 +60,15 @@ export default function LoginForm() {
         setError('');
         setIsLoading(true);
 
-        if (!isSupabaseConfigured()) {
-            setError('新規登録機能を使用するにはSupabaseの設定が必要です');
+        // 基本的なバリデーション
+        if (!name.trim()) {
+            setError('名前を入力してください');
+            setIsLoading(false);
+            return;
+        }
+
+        if (!email.trim()) {
+            setError('メールアドレスを入力してください');
             setIsLoading(false);
             return;
         }
@@ -86,15 +79,23 @@ export default function LoginForm() {
             return;
         }
 
+        if (!isSupabaseConfigured()) {
+            setError('新規登録機能を使用するにはSupabaseの設定とcomplete-setup.sqlの実行が必要です。SUPABASE_SETUP.mdを参照してください。');
+            setIsLoading(false);
+            return;
+        }
+
         dispatch({ type: 'LOGIN_START' });
 
-                try {
+        try {
             const user = await userService.register({
-                email,
+                email: email.trim(),
                 password,  
-                name,
+                name: name.trim(),
             });
 
+            // 登録成功時のメッセージ
+            console.log('Registration successful:', user);
             dispatch({ type: 'LOGIN_SUCCESS', payload: user });
         } catch (error: unknown) {
             const errorObj = error as Error & { code?: string; details?: string; hint?: string };
@@ -106,14 +107,17 @@ export default function LoginForm() {
                 hint: errorObj?.hint
             });
             
+            // より詳細なエラーハンドリング
             if (errorObj.message?.includes('duplicate') || errorObj.code === '23505') {
-                setError('このメールアドレスは既に登録されています');
-            } else if (errorObj.message?.includes('users') && errorObj.message?.includes('not exist')) {
-                setError('データベースのusersテーブルが存在しません。SQLを実行してください。');
+                setError('このメールアドレスは既に登録されています。ログインタブから既存アカウントでログインしてください。');
+            } else if (errorObj.message?.includes('usersテーブルが存在しません') || errorObj.code === '42P01') {
+                setError('データベースが初期化されていません。complete-setup.sqlをSupabase SQL Editorで実行してください。');
+            } else if (errorObj.message?.includes('connection') || errorObj.message?.includes('network')) {
+                setError('データベースに接続できません。Supabaseの設定を確認してください。');
             } else if (errorObj.message) {
-                setError(`登録エラー: ${errorObj.message}`);
+                setError(`新規登録エラー: ${errorObj.message}`);
             } else {
-                setError('新規登録に失敗しました。設定を確認してください。');
+                setError('新規登録に失敗しました。しばらく時間をおいて再試行してください。');
             }
             dispatch({ type: 'LOGIN_FAILURE' });
         } finally {
@@ -134,42 +138,67 @@ export default function LoginForm() {
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-                    {/* Supabase未設定時のデモアカウント案内 */}
-                    {!isSupabaseConfigured() && !isRegistering && (
-                        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
-                            <h3 className="text-sm font-medium text-blue-800 mb-2">デモアカウント</h3>
-                            <div className="text-xs text-blue-700 space-y-1">
-                                <div>admin@company.co.jp / admin123</div>
-                                <div>sales@company.co.jp / sales123</div>
-                                <div>manager@company.co.jp / manager123</div>
+                    {/* ログイン・新規登録切り替えタブ */}
+                    <div className="mb-6 flex justify-center">
+                        <div className="flex bg-gray-100 rounded-lg p-1 w-full">
+                            <button
+                                type="button"
+                                onClick={() => setIsRegistering(false)}
+                                className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${!isRegistering
+                                        ? 'bg-white text-blue-600 shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                    }`}
+                            >
+                                ログイン
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsRegistering(true)}
+                                className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${isRegistering
+                                        ? 'bg-white text-blue-600 shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                    }`}
+                            >
+                                新規登録
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Supabase未設定時の案内（新規登録時のみ） */}
+                    {!isSupabaseConfigured() && isRegistering && (
+                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+                            <div className="text-sm text-red-800">
+                                <p className="font-medium mb-1">⚠️ データベース設定が必要です</p>
+                                <p className="text-xs">
+                                    新規登録機能を使用するには、Supabaseの設定とSQLの実行が必要です。
+                                    <br />SUPABASE_SETUP.mdを参照してください。
+                                </p>
                             </div>
                         </div>
                     )}
 
-                    {/* Supabase設定済みの場合の切り替えボタン */}
-                    {isSupabaseConfigured() && (
-                        <div className="mb-6 flex justify-center">
-                            <div className="flex bg-gray-100 rounded-lg p-1">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsRegistering(false)}
-                                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${!isRegistering
-                                            ? 'bg-white text-blue-600 shadow-sm'
-                                            : 'text-gray-500 hover:text-gray-700'
-                                        }`}
-                                >
-                                    ログイン
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsRegistering(true)}
-                                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${isRegistering
-                                            ? 'bg-white text-blue-600 shadow-sm'
-                                            : 'text-gray-500 hover:text-gray-700'
-                                        }`}
-                                >
-                                    新規登録
-                                </button>
+                    {/* Supabase設定済みの場合の追加情報 */}
+                    {isSupabaseConfigured() && isRegistering && (
+                        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
+                            <div className="text-sm text-green-800">
+                                <p className="font-medium mb-1">✅ 新規登録が利用可能です</p>
+                                <p className="text-xs">
+                                    名前、メールアドレス、パスワード（6文字以上）を入力してアカウントを作成してください。
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 既存アカウントでのテスト用案内（ログイン時のみ・Supabase設定済み） */}
+                    {isSupabaseConfigured() && !isRegistering && (
+                        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                            <div className="text-sm text-blue-800">
+                                <p className="font-medium mb-1">💡 テスト用アカウント</p>
+                                <div className="text-xs text-blue-700 space-y-1">
+                                    <div>admin@company.co.jp / admin123</div>
+                                    <div>sales@company.co.jp / sales123</div>
+                                    <div>manager@company.co.jp / manager123</div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -254,18 +283,16 @@ export default function LoginForm() {
                         </div>
                     </form>
 
-                    {/* Supabase未設定時の新規登録案内 */}
-                    {!isSupabaseConfigured() && (
-                        <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                            <div className="text-sm text-yellow-800">
-                                <p className="font-medium mb-1">新規登録機能について</p>
-                                <p className="text-xs">
-                                    新規登録機能を使用するには、Supabaseの設定が必要です。
-                                    現在はデモアカウントのみご利用いただけます。
-                                </p>
-                            </div>
+                    {/* 新規登録・ログイン機能の案内 */}
+                    <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-md">
+                        <div className="text-sm text-gray-700">
+                            <p className="font-medium mb-1">💡 ヒント</p>
+                            <p className="text-xs">
+                                新規登録でアカウントを作成するか、既存のアカウントでログインしてください。
+                                {!isSupabaseConfigured() && ' データベース設定が必要な場合は、SUPABASE_SETUP.mdを参照してください。'}
+                            </p>
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </div>

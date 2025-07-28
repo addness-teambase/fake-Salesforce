@@ -16,7 +16,7 @@ export default function CompanyDetail({ company, onClose }: CompanyDetailProps) 
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
 
   // 企業の活動記録を取得
-  const companyActivities = state.activities.filter(activity => 
+  const companyActivities = state.activities.filter(activity =>
     activity.companyId === company.id
   ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -63,14 +63,16 @@ export default function CompanyDetail({ company, onClose }: CompanyDetailProps) 
 
   // 活動を追加
   const handleAddActivity = (formData: FormData) => {
-    const type = formData.get('type') as string;
+    const type = formData.get('type') as Activity['type'];
     const title = formData.get('title') as string;
     const content = formData.get('content') as string;
     const nextAction = formData.get('nextAction') as string;
     const nextActionDate = formData.get('nextActionDate') as string;
     const amount = formData.get('amount') as string;
     const probability = formData.get('probability') as string;
-    const status = formData.get('status') as string;
+    const statusValue = formData.get('status') as string;
+    const validStatuses: Activity['status'][] = ['failed', 'next_proposal', 'consideration', 'internal_sharing', 'trial_contract', 'contract', 'opinion_exchange'];
+    const status = validStatuses.includes(statusValue as Activity['status']) ? statusValue as Activity['status'] : undefined;
 
     if (!type || !title || !content) return;
 
@@ -86,7 +88,7 @@ export default function CompanyDetail({ company, onClose }: CompanyDetailProps) 
       ...(type === 'negotiation' && {
         amount: amount ? parseInt(amount) : undefined,
         probability: probability ? parseInt(probability) : undefined,
-        status: status || 'contact',
+        status: status || 'consideration',
       }),
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -100,14 +102,16 @@ export default function CompanyDetail({ company, onClose }: CompanyDetailProps) 
   const handleUpdateActivity = (formData: FormData) => {
     if (!editingActivity) return;
 
-    const type = formData.get('type') as string;
+    const type = formData.get('type') as Activity['type'];
     const title = formData.get('title') as string;
     const content = formData.get('content') as string;
     const nextAction = formData.get('nextAction') as string;
     const nextActionDate = formData.get('nextActionDate') as string;
     const amount = formData.get('amount') as string;
     const probability = formData.get('probability') as string;
-    const status = formData.get('status') as string;
+    const statusValue = formData.get('status') as string;
+    const validStatuses: Activity['status'][] = ['failed', 'next_proposal', 'consideration', 'internal_sharing', 'trial_contract', 'contract', 'opinion_exchange'];
+    const status = validStatuses.includes(statusValue as Activity['status']) ? statusValue as Activity['status'] : undefined;
 
     if (!type || !title || !content) return;
 
@@ -121,7 +125,7 @@ export default function CompanyDetail({ company, onClose }: CompanyDetailProps) 
       ...(type === 'negotiation' && {
         amount: amount ? parseInt(amount) : undefined,
         probability: probability ? parseInt(probability) : undefined,
-        status: status || 'contact',
+        status: status || 'consideration',
       }),
       updatedAt: new Date(),
     };
@@ -315,7 +319,7 @@ export default function CompanyDetail({ company, onClose }: CompanyDetailProps) 
                     <input
                       type="date"
                       name="nextActionDate"
-                      defaultValue={editingActivity.nextActionDate ? 
+                      defaultValue={editingActivity.nextActionDate ?
                         new Date(editingActivity.nextActionDate).toISOString().split('T')[0] : ''}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />

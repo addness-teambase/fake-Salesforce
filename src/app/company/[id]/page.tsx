@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { generateId } from '@/lib/utils';
-import { Activity, Deal } from '@/types';
+import { Activity } from '@/types';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
@@ -18,9 +18,9 @@ export default function CompanyDetail() {
     const activities = state.activities.filter(a => a.companyId === id).sort(
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
-    const deals = state.deals.filter(d => d.companyId === id).sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    const deals = state.activities
+        .filter(activity => activity.companyId === id && activity.type === 'negotiation')
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     // 担当者名を取得
     const getRepresentativeName = (repId: string) => {
@@ -58,10 +58,12 @@ export default function CompanyDetail() {
             companyId: id as string,
             date,
             type,
+            title: `${type === 'negotiation' ? '商談' : type === 'email' ? 'メール' : '電話'}記録`,
             content,
             nextAction: nextAction || undefined,
             nextActionDate: nextActionDate ? new Date(nextActionDate) : undefined,
             createdAt: new Date(),
+            updatedAt: new Date(),
         };
 
         dispatch({ type: 'ADD_ACTIVITY', payload: newActivity });
@@ -72,25 +74,28 @@ export default function CompanyDetail() {
     const handleAddDeal = (formData: FormData) => {
         const name = formData.get('dealName') as string;
         const amount = parseInt(formData.get('amount') as string);
-        const status = formData.get('status') as Deal['status'];
+        const status = formData.get('status') as Activity['status'];
         const probability = parseInt(formData.get('probability') as string);
         const expectedCloseDate = formData.get('expectedCloseDate') as string;
 
         if (!name || !amount || !status || probability === undefined) return;
 
-        const newDeal: Deal = {
+        const newActivity: Activity = {
             id: generateId(),
             companyId: id as string,
-            name,
+            date: new Date(),
+            type: 'negotiation',
+            title: name,
+            content: `商談金額: ${amount.toLocaleString()}円, 受注確率: ${probability}%`,
             amount,
             status,
             probability,
-            expectedCloseDate: expectedCloseDate ? new Date(expectedCloseDate) : undefined,
+            nextActionDate: expectedCloseDate ? new Date(expectedCloseDate) : undefined,
             createdAt: new Date(),
             updatedAt: new Date(),
         };
 
-        dispatch({ type: 'ADD_DEAL', payload: newDeal });
+        dispatch({ type: 'ADD_ACTIVITY', payload: newActivity });
         setShowDealForm(false);
     };
 
@@ -98,24 +103,24 @@ export default function CompanyDetail() {
     const getActivityTypeLabel = (type: Activity['type']) => {
         const labels = {
             phone: '📞 電話',
-            visit: '🏢 訪問',
-            email: '📧 メール',
-            other: '📝 その他'
+            negotiation: '💼 商談',
+            email: '📧 メール'
         };
         return labels[type];
     };
 
     // 商談ステータスの表示名と色
-    const getDealStatusInfo = (status: Deal['status']) => {
+    const getDealStatusInfo = (status: Activity['status']) => {
         const statusInfo = {
-            prospect: { label: '見込み', color: 'bg-gray-100 text-gray-800' },
-            negotiating: { label: '商談中', color: 'bg-blue-100 text-blue-800' },
-            proposal: { label: '提案', color: 'bg-yellow-100 text-yellow-800' },
-            closing: { label: 'クロージング', color: 'bg-orange-100 text-orange-800' },
-            won: { label: '受注', color: 'bg-green-100 text-green-800' },
-            lost: { label: '失注', color: 'bg-red-100 text-red-800' }
+            failed: { label: '失注', color: 'bg-red-100 text-red-800' },
+            next_proposal: { label: '次回提案', color: 'bg-blue-100 text-blue-800' },
+            consideration: { label: '検討中', color: 'bg-yellow-100 text-yellow-800' },
+            internal_sharing: { label: '社内共有', color: 'bg-purple-100 text-purple-800' },
+            trial_contract: { label: '試用契約', color: 'bg-orange-100 text-orange-800' },
+            contract: { label: '契約', color: 'bg-green-100 text-green-800' },
+            opinion_exchange: { label: '意見交換', color: 'bg-gray-100 text-gray-800' }
         };
-        return statusInfo[status];
+        return status ? statusInfo[status] : { label: '未設定', color: 'bg-gray-100 text-gray-800' };
     };
 
     return (
@@ -195,8 +200,8 @@ export default function CompanyDetail() {
                                 <button
                                     onClick={() => setActiveTab('activities')}
                                     className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'activities'
-                                            ? 'border-blue-500 text-blue-600'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                                        ? 'border-blue-500 text-blue-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700'
                                         }`}
                                 >
                                     活動履歴 ({activities.length})
@@ -204,8 +209,8 @@ export default function CompanyDetail() {
                                 <button
                                     onClick={() => setActiveTab('deals')}
                                     className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'deals'
-                                            ? 'border-blue-500 text-blue-600'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                                        ? 'border-blue-500 text-blue-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700'
                                         }`}
                                 >
                                     商談管理 ({deals.length})
@@ -466,37 +471,29 @@ export default function CompanyDetail() {
                                                     <div className="flex items-start justify-between mb-3">
                                                         <div>
                                                             <h4 className="font-medium text-gray-900 mb-1">
-                                                                {deal.name}
+                                                                {deal.title}
                                                             </h4>
                                                             <div className="flex items-center gap-3 text-sm">
                                                                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
                                                                     {statusInfo.label}
                                                                 </span>
                                                                 <span className="text-gray-600">
-                                                                    {deal.amount.toLocaleString()}円
+                                                                    {deal.amount ? deal.amount.toLocaleString() : '0'}円
                                                                 </span>
                                                                 <span className="text-gray-600">
-                                                                    確率: {deal.probability}%
+                                                                    確率: {deal.probability ?? 0}%
                                                                 </span>
                                                             </div>
                                                         </div>
                                                         <div className="text-right text-sm text-gray-600">
                                                             <div>登録: {deal.createdAt.toLocaleDateString('ja-JP')}</div>
-                                                            {deal.expectedCloseDate && (
-                                                                <div>完了予定: {deal.expectedCloseDate.toLocaleDateString('ja-JP')}</div>
+                                                            {deal.nextActionDate && (
+                                                                <div>次回アクション日: {deal.nextActionDate.toLocaleDateString('ja-JP')}</div>
                                                             )}
                                                         </div>
                                                     </div>
 
-                                                    {(deal.result || deal.resultReason) && (
-                                                        <div className="mt-3 p-3 bg-gray-50 rounded-md">
-                                                            <p className="text-sm font-medium text-gray-700 mb-1">結果</p>
-                                                            <p className="text-sm text-gray-600">
-                                                                {deal.result === 'success' ? '✅ 成功' : '❌ 失敗'}
-                                                                {deal.resultReason && ` - ${deal.resultReason}`}
-                                                            </p>
-                                                        </div>
-                                                    )}
+
                                                 </div>
                                             );
                                         })}

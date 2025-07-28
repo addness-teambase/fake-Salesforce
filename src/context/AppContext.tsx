@@ -1,10 +1,10 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useState } from 'react';
-import { AppState, AppAction, Company, Activity, Representative, List, User, AuthState } from '@/types';
+import { AppState, AppAction, Company, Activity, Representative } from '@/types';
 import { companyService, activityService, representativeService, listService } from '@/lib/database';
 import { isSupabaseConfigured } from '@/lib/supabase';
-import { generateId } from '@/lib/utils';
+// import { generateId } from '@/lib/utils'; // 未使用のためコメントアウト
 
 // Supabaseが設定されていない場合のローカルデモデータ
 const demoRepresentatives: Representative[] = [
@@ -395,7 +395,7 @@ export function AppProvider({ children }: AppProviderProps) {
                 try {
                     const parsedAuth = JSON.parse(savedAuth);
                     dispatch({ type: 'RESTORE_AUTH_STATE', payload: parsedAuth });
-                } catch (error) {
+                } catch (_error) {
                     // localStorage の内容が壊れている場合は削除
                     localStorage.removeItem('fake-salesforce-auth');
                 }

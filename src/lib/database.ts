@@ -40,7 +40,7 @@ const convertDatabaseActivityToActivity = (dbActivity: DatabaseActivity): Activi
     id: dbActivity.id,
     companyId: dbActivity.company_id,
     date: new Date(dbActivity.date),
-    type: dbActivity.type,
+    type: dbActivity.type as Activity['type'],
     title: dbActivity.title,
     content: dbActivity.content,
     amount: dbActivity.amount || undefined,
@@ -89,7 +89,7 @@ export const companyService = {
             throwSupabaseNotConfigured()
         }
 
-        const { data, error } = await typedSupabase
+        const { data, error } = await typedSupabase!
             .from('companies')
             .select('*')
             .order('created_at', { ascending: false })
@@ -104,7 +104,7 @@ export const companyService = {
             throwSupabaseNotConfigured()
         }
 
-        const { data, error } = await typedSupabase
+        const { data, error } = await typedSupabase!
             .from('companies')
             .insert(convertCompanyToDatabaseInsert(company))
             .select()
@@ -119,7 +119,7 @@ export const companyService = {
         if (!isSupabaseConfigured() || !typedSupabase) {
             throwSupabaseNotConfigured()
         }
-        const updateData: any = {}
+        const updateData: Record<string, unknown> = {}
         if (company.name) updateData.name = company.name
         if (company.contactPerson) updateData.contact_person = company.contactPerson
         if (company.department) updateData.department = company.department
@@ -131,7 +131,7 @@ export const companyService = {
         if (company.prospectScore) updateData.prospect_score = company.prospectScore
         if (company.memo !== undefined) updateData.memo = company.memo
 
-        const { data, error } = await typedSupabase
+        const { data, error } = await typedSupabase!
             .from('companies')
             .update(updateData)
             .eq('id', id)
@@ -148,7 +148,7 @@ export const companyService = {
             throwSupabaseNotConfigured()
         }
 
-        const { error } = await typedSupabase
+        const { error } = await typedSupabase!
             .from('companies')
             .delete()
             .eq('id', id)
@@ -165,7 +165,7 @@ export const activityService = {
             throwSupabaseNotConfigured()
         }
 
-        const { data, error } = await typedSupabase
+        const { data, error } = await typedSupabase!
             .from('activities')
             .select('*')
             .order('date', { ascending: false })
@@ -180,7 +180,7 @@ export const activityService = {
             throwSupabaseNotConfigured()
         }
 
-        const { data, error } = await typedSupabase
+        const { data, error } = await typedSupabase!
             .from('activities')
             .select('*')
             .eq('company_id', companyId)
@@ -192,7 +192,7 @@ export const activityService = {
 
     // 活動を追加
     async add(activity: Omit<Activity, 'id' | 'createdAt' | 'updatedAt'>): Promise<Activity> {
-        const { data, error } = await typedSupabase
+        const { data, error } = await typedSupabase!
             .from('activities')
             .insert(convertActivityToDatabaseInsert(activity))
             .select()
@@ -204,7 +204,7 @@ export const activityService = {
 
     // 活動を更新
     async update(id: string, activity: Partial<Omit<Activity, 'id' | 'createdAt'>>): Promise<Activity> {
-        const updateData: any = {}
+        const updateData: Record<string, unknown> = {}
         if (activity.companyId) updateData.company_id = activity.companyId
         if (activity.date) updateData.date = activity.date.toISOString()
         if (activity.type) updateData.type = activity.type
@@ -218,7 +218,7 @@ export const activityService = {
             updateData.next_action_date = activity.nextActionDate ? activity.nextActionDate.toISOString() : null
         }
 
-        const { data, error } = await typedSupabase
+        const { data, error } = await typedSupabase!
             .from('activities')
             .update(updateData)
             .eq('id', id)
@@ -231,7 +231,7 @@ export const activityService = {
 
     // 活動を削除
     async delete(id: string): Promise<void> {
-        const { error } = await typedSupabase
+        const { error } = await typedSupabase!
             .from('activities')
             .delete()
             .eq('id', id)
@@ -244,7 +244,7 @@ export const activityService = {
 export const representativeService = {
     // 全担当者を取得
     async getAll(): Promise<Representative[]> {
-        const { data, error } = await typedSupabase
+        const { data, error } = await typedSupabase!
             .from('representatives')
             .select('*')
             .order('name')
@@ -255,7 +255,7 @@ export const representativeService = {
 
     // 担当者を追加
     async add(representative: Omit<Representative, 'id' | 'createdAt' | 'updatedAt'>): Promise<Representative> {
-        const { data, error } = await typedSupabase
+        const { data, error } = await typedSupabase!
             .from('representatives')
             .insert({
                 name: representative.name,
@@ -270,7 +270,7 @@ export const representativeService = {
 
     // 担当者を更新
     async update(id: string, representative: Partial<Omit<Representative, 'id' | 'createdAt'>>): Promise<Representative> {
-        const { data, error } = await typedSupabase
+        const { data, error } = await typedSupabase!
             .from('representatives')
             .update({
                 name: representative.name,
@@ -286,7 +286,7 @@ export const representativeService = {
 
     // 担当者を削除
     async delete(id: string): Promise<void> {
-        const { error } = await typedSupabase
+        const { error } = await typedSupabase!
             .from('representatives')
             .delete()
             .eq('id', id)
@@ -299,7 +299,7 @@ export const representativeService = {
 export const listService = {
     // 全リストを取得
     async getAll(): Promise<List[]> {
-        const { data, error } = await typedSupabase
+        const { data, error } = await typedSupabase!
             .from('lists')
             .select('*')
             .order('name')
@@ -310,7 +310,7 @@ export const listService = {
 
     // リストを追加
     async add(list: Omit<List, 'id' | 'createdAt' | 'updatedAt'>): Promise<List> {
-        const { data, error } = await typedSupabase
+        const { data, error } = await typedSupabase!
             .from('lists')
             .insert({
                 name: list.name,
@@ -325,7 +325,7 @@ export const listService = {
 
     // リストを更新
     async update(id: string, list: Partial<Omit<List, 'id' | 'createdAt'>>): Promise<List> {
-        const { data, error } = await typedSupabase
+        const { data, error } = await typedSupabase!
             .from('lists')
             .update({
                 name: list.name,
@@ -341,7 +341,7 @@ export const listService = {
 
     // リストを削除
     async delete(id: string): Promise<void> {
-        const { error } = await typedSupabase
+        const { error } = await typedSupabase!
             .from('lists')
             .delete()
             .eq('id', id)
@@ -389,7 +389,7 @@ export const userService = {
         try {
             const passwordHash = await hashPassword(userData.password)
 
-            const { data, error } = await typedSupabase
+            const { data, error } = await typedSupabase!
                 .from('users')
                 .insert([{
                     email: userData.email,
@@ -426,16 +426,17 @@ export const userService = {
             }
 
             return convertDatabaseUserToUser(data as DatabaseUser)
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorObj = error as Error;
             // 既に投げられたエラーの場合はそのまま再投げ
-            if (error.message?.includes('データベースエラー:') ||
-                error.message?.includes('usersテーブルが存在しません') ||
-                error.message?.includes('このメールアドレス')) {
+            if (errorObj.message?.includes('データベースエラー:') ||
+                errorObj.message?.includes('usersテーブルが存在しません') ||
+                errorObj.message?.includes('このメールアドレス')) {
                 throw error
             }
             // その他のエラー（ネットワークエラーなど）
             console.error('User registration error:', error)
-            throw new Error(`ユーザー登録に失敗しました: ${error.message}`)
+            throw new Error(`ユーザー登録に失敗しました: ${errorObj.message}`)
         }
     },
 
@@ -446,7 +447,7 @@ export const userService = {
         }
 
         try {
-            const { data, error } = await typedSupabase
+            const { data, error } = await typedSupabase!
                 .from('users')
                 .select('*')
                 .eq('email', email)
@@ -465,7 +466,7 @@ export const userService = {
             if (!isPasswordValid) return null
 
             return convertDatabaseUserToUser(dbUser)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Authentication error:', error)
             return null
         }
@@ -478,7 +479,7 @@ export const userService = {
         }
 
         try {
-            const { data, error } = await typedSupabase
+            const { data, error } = await typedSupabase!
                 .from('users')
                 .select('id, email, name, created_at, updated_at')
                 .eq('email', email)
@@ -491,7 +492,7 @@ export const userService = {
 
             if (!data) return null
             return convertDatabaseUserToUser(data as DatabaseUser)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Find user error:', error)
             return null
         }
@@ -503,7 +504,7 @@ export const userService = {
             throwSupabaseNotConfigured()
         }
 
-        const { data, error } = await typedSupabase
+        const { data, error } = await typedSupabase!
             .from('users')
             .update(userData)
             .eq('id', id)

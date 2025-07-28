@@ -96,21 +96,22 @@ export default function LoginForm() {
             });
 
             dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorObj = error as Error & { code?: string; details?: string; hint?: string };
             console.error('Registration error details:', {
                 error,
-                message: error?.message,
-                code: error?.code,
-                details: error?.details,
-                hint: error?.hint
+                message: errorObj?.message,
+                code: errorObj?.code,
+                details: errorObj?.details,
+                hint: errorObj?.hint
             });
             
-            if (error.message?.includes('duplicate') || error.code === '23505') {
+            if (errorObj.message?.includes('duplicate') || errorObj.code === '23505') {
                 setError('このメールアドレスは既に登録されています');
-            } else if (error.message?.includes('users') && error.message?.includes('not exist')) {
+            } else if (errorObj.message?.includes('users') && errorObj.message?.includes('not exist')) {
                 setError('データベースのusersテーブルが存在しません。SQLを実行してください。');
-            } else if (error.message) {
-                setError(`登録エラー: ${error.message}`);
+            } else if (errorObj.message) {
+                setError(`登録エラー: ${errorObj.message}`);
             } else {
                 setError('新規登録に失敗しました。設定を確認してください。');
             }

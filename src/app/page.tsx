@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useApp } from '@/context/AppContext';
 import { generateId } from '@/lib/utils';
 import { Company, Representative, List } from '@/types';
-import Link from 'next/link';
+// import Link from 'next/link'; // 未使用のため一時的にコメントアウト
 import AuthGuard from '@/components/AuthGuard';
 import CompanyDetail from '@/components/CompanyDetail';
 import LoadingFallback from '@/components/LoadingFallback';
@@ -73,22 +73,6 @@ function CompanyListContent() {
 
   // 企業詳細表示
   const [selectedCompanyDetail, setSelectedCompanyDetail] = useState<Company | null>(null);
-
-  // ローディング状態やエラー状態をチェック（全てのHooksの後に配置）
-  if (state.isLoading || state.error) {
-    return (
-      <LoadingFallback
-        isLoading={state.isLoading || false}
-        error={state.error || null}
-        onRetry={loadData}
-        onUseDemoData={() => {
-          // .env.localファイルの設定を削除してデモデータで続行
-          console.log('デモデータで続行します');
-          window.location.reload(); // ページをリロードしてデモデータで起動
-        }}
-      />
-    );
-  }
 
   // 商談実施状況を判定（商談の活動があるかチェック）
   const hasNegotiationActivity = (companyId: string) => {
@@ -263,10 +247,10 @@ function CompanyListContent() {
   // 全フィルターをクリア
   const clearAllFilters = () => {
     const emptyFilters = {
-      representative: new Set(),
-      list: new Set(),
-      prospectScore: new Set(),
-      negotiationStatus: new Set(),
+      representative: new Set<string>(),
+      list: new Set<string>(),
+      prospectScore: new Set<string>(),
+      negotiationStatus: new Set<string>(),
     };
     setColumnFilters(emptyFilters);
     setTempColumnFilters(emptyFilters);
@@ -421,7 +405,7 @@ function CompanyListContent() {
   };
 
   // 条件による一括選択
-  const handleSelectByCondition = (condition: 'representative' | 'all-visible' | 'all-in-tab') => {
+  const handleSelectByCondition = useCallback((condition: 'representative' | 'all-visible' | 'all-in-tab') => {
     if (condition === 'representative' && columnFilters.representative.size > 0) {
       const representativeIds = Array.from(columnFilters.representative);
       const companiesByRep = state.companies.filter(c => representativeIds.includes(c.representativeId));
@@ -436,7 +420,7 @@ function CompanyListContent() {
       setSelectedCompanies(companiesInTab.map(c => c.id));
     }
     setShowBulkActions(false);
-  };
+  }, [columnFilters.representative, state.companies, filteredCompanies, activeListTab]);
 
   // 個別選択
   const handleSelectCompany = (companyId: string, checked: boolean, index?: number) => {
@@ -450,8 +434,8 @@ function CompanyListContent() {
     }
   };
 
-  // 範囲選択（Shift+クリック）
-  const handleRangeSelect = (currentIndex: number, event: React.MouseEvent) => {
+  // 範囲選択（Shift+クリック）- 現在未使用のためコメントアウト
+  /* const handleRangeSelect = (currentIndex: number, event: React.MouseEvent) => {
     if (event.shiftKey && lastClickIndex !== null) {
       const startIndex = Math.min(lastClickIndex, currentIndex);
       const endIndex = Math.max(lastClickIndex, currentIndex);
@@ -470,7 +454,7 @@ function CompanyListContent() {
       const isSelected = selectedCompanies.includes(company.id);
       handleSelectCompany(company.id, !isSelected, currentIndex);
     }
-  };
+  }; */
 
   // マウスドラッグによる範囲選択
   const handleMouseDown = (event: React.MouseEvent, startIndex: number) => {
@@ -671,7 +655,7 @@ function CompanyListContent() {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [showBulkActions, isRangeSelecting]);
+  }, [showBulkActions, isRangeSelecting, handleSelectByCondition]);
 
   // 新しい企業を追加
   const handleAddCompany = (formData: FormData) => {
@@ -683,7 +667,7 @@ function CompanyListContent() {
     const phoneNumber = formData.get('phoneNumber') as string;
     const representativeId = formData.get('representativeId') as string;
     const listId = formData.get('listId') as string;
-    const prospectScore = parseInt(formData.get('prospectScore') as string) || 3;
+    const prospectScore = (formData.get('prospectScore') as string) || 'C';
     const memo = formData.get('memo') as string;
 
     if (!name || !contactPerson || !department || !position || !email || !phoneNumber || !representativeId) return;
@@ -720,7 +704,7 @@ function CompanyListContent() {
     const phoneNumber = formData.get('phoneNumber') as string;
     const representativeId = formData.get('representativeId') as string;
     const listId = formData.get('listId') as string;
-    const prospectScore = parseInt(formData.get('prospectScore') as string) || editingCompany.prospectScore;
+    const prospectScore = (formData.get('prospectScore') as string) || editingCompany.prospectScore;
     const memo = formData.get('memo') as string;
 
     if (!name || !contactPerson || !department || !position || !email || !phoneNumber || !representativeId) return;
@@ -1007,7 +991,7 @@ function CompanyListContent() {
           dispatch({ type: 'ADD_COMPANY', payload: newCompany });
           results.success++;
 
-        } catch (error) {
+        } catch (_error) {
           results.error++;
           results.errors.push(`行 ${index + 2}: データの処理中にエラーが発生しました`);
         }
@@ -1019,10 +1003,26 @@ function CompanyListContent() {
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
 
-    } catch (error) {
+    } catch (_error) {
       setCsvError('CSVファイルの読み取りに失敗しました。ファイル形式を確認してください。');
     }
   };
+
+  // ローディング状態やエラー状態をチェック
+  if (state.isLoading || state.error) {
+    return (
+      <LoadingFallback
+        isLoading={state.isLoading || false}
+        error={state.error || null}
+        onRetry={loadData}
+        onUseDemoData={() => {
+          // .env.localファイルの設定を削除してデモデータで続行
+          console.log('デモデータで続行します');
+          window.location.reload(); // ページをリロードしてデモデータで起動
+        }}
+      />
+    );
+  }
 
   // 企業詳細が選択されている場合は詳細画面を表示
   if (selectedCompanyDetail) {

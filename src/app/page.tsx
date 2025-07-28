@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useApp } from '@/context/AppContext';
 import { generateId } from '@/lib/utils';
 import { Company, Representative, List } from '@/types';
@@ -70,6 +70,10 @@ function CompanyListContent() {
   const [rangeStartIndex, setRangeStartIndex] = useState<number | null>(null);
   const [rangeEndIndex, setRangeEndIndex] = useState<number | null>(null);
   const [lastClickIndex, setLastClickIndex] = useState<number | null>(null);
+
+  // 自動スクロール用のRef
+  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   // 企業詳細表示
   const [selectedCompanyDetail, setSelectedCompanyDetail] = useState<Company | null>(null);
@@ -485,6 +489,25 @@ function CompanyListContent() {
     }
   };
 
+  // 自動スクロール機能
+  const startAutoScroll = (direction: 'up' | 'down', speed: number) => {
+    stopAutoScroll(); // 既存のスクロールを停止
+
+    scrollIntervalRef.current = setInterval(() => {
+      if (containerRef.current) {
+        const scrollAmount = direction === 'up' ? -speed : speed;
+        containerRef.current.scrollBy(0, scrollAmount);
+      }
+    }, 20); // 50fps（少しスムーズに）
+  };
+
+  const stopAutoScroll = () => {
+    if (scrollIntervalRef.current) {
+      clearInterval(scrollIntervalRef.current);
+      scrollIntervalRef.current = null;
+    }
+  };
+
   const handleMouseMove = (event: React.MouseEvent, currentIndex: number) => {
     if (isRangeSelecting && rangeStartIndex !== null) {
       setRangeEndIndex(currentIndex);
@@ -497,6 +520,32 @@ function CompanyListContent() {
       const rangeIds = rangeCompanies.map(c => c.id);
 
       setSelectedCompanies(rangeIds);
+
+      // 自動スクロール判定
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect) {
+        const mouseY = event.clientY;
+        const scrollZoneHeight = 80; // スクロールゾーンの高さ（少し小さく）
+        const maxSpeed = 8; // 最大スクロール速度（少し遅く）
+        const minSpeed = 1; // 最小スクロール速度
+
+        // 上端でのスクロール
+        if (mouseY - rect.top < scrollZoneHeight) {
+          const distance = scrollZoneHeight - (mouseY - rect.top);
+          const speed = Math.max(minSpeed, Math.min(maxSpeed, (distance / scrollZoneHeight) * maxSpeed + 1));
+          startAutoScroll('up', speed);
+        }
+        // 下端でのスクロール
+        else if (rect.bottom - mouseY < scrollZoneHeight) {
+          const distance = scrollZoneHeight - (rect.bottom - mouseY);
+          const speed = Math.max(minSpeed, Math.min(maxSpeed, (distance / scrollZoneHeight) * maxSpeed + 1));
+          startAutoScroll('down', speed);
+        }
+        // スクロールゾーン外では停止
+        else {
+          stopAutoScroll();
+        }
+      }
     }
   };
 
@@ -504,6 +553,7 @@ function CompanyListContent() {
     setIsRangeSelecting(false);
     setRangeStartIndex(null);
     setRangeEndIndex(null);
+    stopAutoScroll(); // 自動スクロールを停止
   };
 
   // 一括変更処理
@@ -646,6 +696,7 @@ function CompanyListContent() {
         setIsRangeSelecting(false);
         setRangeStartIndex(null);
         setRangeEndIndex(null);
+        stopAutoScroll(); // Escapeキーでスクロールも停止
       }
       // Ctrl+A で全選択
       if (event.ctrlKey && event.key === 'a' && !event.target) {
@@ -662,6 +713,7 @@ function CompanyListContent() {
       document.removeEventListener('click', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mouseup', handleMouseUp);
+      stopAutoScroll(); // クリーンアップ時にスクロールを停止
     };
   }, [showBulkActions, isRangeSelecting, handleSelectByCondition]);
 
@@ -2105,7 +2157,10 @@ function CompanyListContent() {
               {searchTerm ? '該当する企業が見つかりません。' : '企業が登録されていません。'}
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div 
+              className={`overflow-x-auto ${isRangeSelecting ? 'select-none cursor-crosshair' : ''}`} 
+              ref={containerRef}
+            >
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
@@ -2218,12 +2273,14 @@ function CompanyListContent() {
                         key={company.id}
                         draggable
                         className={`transition-all ${selectedCompanies.includes(company.id)
-                          ? 'bg-blue-100 border-blue-300'
+                          ? 'bg-blue-100 border-blue-300 shadow-sm'
                           : isInRange && isRangeSelecting
-                            ? 'bg-blue-50 border-blue-200'
-                            : 'hover:bg-gray-50'
+                            ? 'bg-blue-50 border-blue-200 shadow-sm'
+                            : isRangeSelecting
+                              ? 'hover:bg-blue-25'  
+                              : 'hover:bg-gray-50'
                           } ${draggedCompany === company.id ? 'opacity-50 bg-yellow-50' : ''
-                          } relative group cursor-move border border-transparent`}
+                          } relative group ${isRangeSelecting ? 'cursor-crosshair' : 'cursor-move'} border border-transparent`}
                         onDragStart={(e) => handleDragStart(e, company.id)}
                         onDragEnd={handleDragEnd}
                         onMouseDown={(e) => {

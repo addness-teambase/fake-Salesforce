@@ -42,6 +42,15 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 - `your-project-id`を実際のプロジェクトIDに置き換えてください
 - `your-anon-key-here`を実際のanon keyに置き換えてください
 
+**💡 デフォルトアカウント情報**（新規登録機能テスト用）：
+- `admin@company.co.jp` / `admin123` （管理者）
+- `sales@company.co.jp` / `sales123` （営業担当）
+- `manager@company.co.jp` / `manager123` （マネージャー）
+
+**🆕 新規登録機能**：
+- Supabase設定完了後、新規アカウント登録が可能になります
+- 登録時に名前、メールアドレス、パスワード（6文字以上）が必要です
+
 ## 4. 動作確認
 
 1. アプリケーションを起動：

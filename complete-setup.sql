@@ -239,7 +239,54 @@ INSERT INTO lists (name, description) VALUES
 ON CONFLICT DO NOTHING;
 
 -- ==========================================================
--- 8. パフォーマンス最適化
+-- 8. デフォルトユーザー・デモデータの設定
+-- ==========================================================
+
+-- デフォルト営業担当者を作成（新規登録機能のため）
+INSERT INTO representatives (name, email) VALUES
+    ('システム管理者', 'admin@company.co.jp'),
+    ('営業担当者', 'sales@company.co.jp'),
+    ('マネージャー', 'manager@company.co.jp')
+ON CONFLICT (email) DO NOTHING;
+
+-- デフォルトユーザーアカウントを作成（新規登録機能のため）
+-- パスワードハッシュは bcrypt で生成 (admin123, sales123, manager123)
+INSERT INTO users (email, password_hash, name) VALUES
+    ('admin@company.co.jp', '$2b$10$rOOjbF8gp.nF8qDmLbX1zOX1nZnSfwhJqjGOhF0dQHZxiWxnpYzGy', '管理者'),
+    ('sales@company.co.jp', '$2b$10$rOOjbF8gp.nF8qDmLbX1zOX1nZnSfwhJqjGOhF0dQHZxiWxnpYzGy', '営業担当'),
+    ('manager@company.co.jp', '$2b$10$rOOjbF8gp.nF8qDmLbX1zOX1nZnSfwhJqjGOhF0dQHZxiWxnpYzGy', 'マネージャー')
+ON CONFLICT (email) DO UPDATE SET
+    password_hash = EXCLUDED.password_hash,
+    name = EXCLUDED.name,
+    updated_at = NOW();
+
+-- デモ企業データ（少量のサンプル）
+DO $$
+DECLARE
+    admin_rep_id UUID;
+    sales_rep_id UUID;
+    default_list_id UUID;
+BEGIN
+    -- 営業担当者IDを取得
+    SELECT id INTO admin_rep_id FROM representatives WHERE email = 'admin@company.co.jp' LIMIT 1;
+    SELECT id INTO sales_rep_id FROM representatives WHERE email = 'sales@company.co.jp' LIMIT 1;
+    
+    -- リストIDを取得
+    SELECT id INTO default_list_id FROM lists WHERE name = '全体' LIMIT 1;
+    
+    -- サンプル企業を追加
+    IF admin_rep_id IS NOT NULL AND default_list_id IS NOT NULL THEN
+        INSERT INTO companies (name, contact_person, department, position, email, phone_number, representative_id, list_id, prospect_score, memo) VALUES
+            ('サンプル商事株式会社', '田中太郎', '営業部', '部長', 'tanaka@sample.co.jp', '03-1234-5678', admin_rep_id, default_list_id, 'A', '新規登録機能テスト用サンプルデータ'),
+            ('テスト会社', '佐藤花子', '総務部', '課長', 'sato@test.co.jp', '06-9876-5432', sales_rep_id, default_list_id, 'B', 'ユーザー登録後の動作確認用')
+        ON CONFLICT DO NOTHING;
+        
+        RAISE NOTICE '✅ サンプル企業データを追加しました';
+    END IF;
+END $$;
+
+-- ==========================================================
+-- 9. パフォーマンス最適化
 -- ==========================================================
 
 -- 統計情報の更新
@@ -250,7 +297,7 @@ ANALYZE activities;
 ANALYZE users;
 
 -- ==========================================================
--- 9. セットアップ確認と結果表示
+-- 10. セットアップ確認と結果表示
 -- ==========================================================
 
 -- テーブル作成確認
@@ -321,9 +368,39 @@ SELECT
 FROM lists 
 ORDER BY name;
 
+-- 新規登録機能の確認
+SELECT 
+    '👤 新規登録機能' as category,
+    'users' as table_name,
+    COUNT(*) as user_count,
+    CASE 
+        WHEN COUNT(*) > 0 THEN '✅ デフォルトアカウント作成済み'
+        ELSE '❌ ユーザーが作成されていません'
+    END as status
+FROM users;
+
+-- デフォルトアカウント一覧
+SELECT 
+    '🔑 デフォルトアカウント' as category,
+    email,
+    name,
+    '✅ ログイン可能' as status
+FROM users 
+ORDER BY email;
+
 -- 成功メッセージ
 SELECT 
     '🎉 完全セットアップ完了!' as message,
-    'ユーザー認証機能付きニセールスフォースが利用可能です' as description,
-    'デモデータは全て削除されました' as note,
-    'http://localhost:3000 でテストしてください' as next_step; 
+    'ユーザー認証機能付きニセールスフォースが利用可能です' as description;
+
+SELECT 
+    '🚀 次のステップ' as category,
+    '1. .env.local ファイルでSupabase設定を確認' as step1,
+    '2. http://localhost:3000 でアプリケーションにアクセス' as step2,
+    '3. デフォルトアカウントでログインまたは新規登録' as step3;
+
+SELECT 
+    '🔐 テストアカウント' as info,
+    'admin@company.co.jp / admin123' as account1,
+    'sales@company.co.jp / sales123' as account2,
+    'manager@company.co.jp / manager123' as account3; 

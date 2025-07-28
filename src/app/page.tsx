@@ -74,6 +74,8 @@ function CompanyListContent() {
   // 自動スクロール用のRef
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const currentMouseYRef = useRef<number>(0);
+  const scrollDirectionRef = useRef<'up' | 'down' | null>(null);
 
   // 企業詳細表示
   const [selectedCompanyDetail, setSelectedCompanyDetail] = useState<Company | null>(null);
@@ -489,16 +491,105 @@ function CompanyListContent() {
     }
   };
 
+  // マウス位置から行インデックスを計算
+  const getRowIndexFromMouseY = (mouseY: number): number => {
+    if (!containerRef.current) return -1;
+
+    const tableRows = containerRef.current.querySelectorAll('tbody tr');
+    const containerRect = containerRef.current.getBoundingClientRect();
+
+    // 最も近い行を見つける
+    let closestIndex = -1;
+    let minDistance = Infinity;
+
+    for (let i = 0; i < tableRows.length; i++) {
+      const rowRect = tableRows[i].getBoundingClientRect();
+      
+      // マウスが行の中にある場合
+      if (mouseY >= rowRect.top && mouseY <= rowRect.bottom) {
+        return i;
+      }
+
+      // 最も近い行を記録
+      const rowCenter = (rowRect.top + rowRect.bottom) / 2;
+      const distance = Math.abs(mouseY - rowCenter);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIndex = i;
+      }
+    }
+
+    // マウスがテーブルより下にある場合
+    if (tableRows.length > 0) {
+      const lastRowRect = tableRows[tableRows.length - 1].getBoundingClientRect();
+      if (mouseY > lastRowRect.bottom) {
+        // まだスクロールできる場合は、仮想的に次の行を想定
+        const potentialNextIndex = Math.min(filteredCompanies.length - 1, tableRows.length);
+        return potentialNextIndex;
+      }
+    }
+
+    // マウスがテーブルより上にある場合
+    if (tableRows.length > 0) {
+      const firstRowRect = tableRows[0].getBoundingClientRect();
+      if (mouseY < firstRowRect.top) {
+        return Math.max(0, closestIndex);
+      }
+    }
+
+    return Math.max(0, closestIndex);
+  };
+
+  // 選択範囲を更新（スクロール中の連続選択用）
+  const updateSelectionWhileScrolling = () => {
+    if (isRangeSelecting && rangeStartIndex !== null && scrollDirectionRef.current) {
+      const direction = scrollDirectionRef.current;
+      
+      // 現在の選択終了インデックスを取得
+      const currentEndIndex = rangeEndIndex ?? rangeStartIndex;
+      
+      // スクロール方向に基づいて選択範囲を拡張
+      let newEndIndex = currentEndIndex;
+      
+      if (direction === 'down') {
+        // 下向きスクロール：選択範囲を下に拡張（1行ずつ）
+        newEndIndex = Math.min(filteredCompanies.length - 1, currentEndIndex + 1);
+      } else if (direction === 'up') {
+        // 上向きスクロール：選択範囲を上に拡張
+        newEndIndex = Math.max(0, currentEndIndex - 1);
+      }
+      
+      if (newEndIndex !== currentEndIndex) {
+        setRangeEndIndex(newEndIndex);
+
+        // 範囲内の企業を選択
+        const startIndex = Math.min(rangeStartIndex, newEndIndex);
+        const endIndex = Math.max(rangeStartIndex, newEndIndex);
+
+        const rangeCompanies = filteredCompanies.slice(startIndex, endIndex + 1);
+        const rangeIds = rangeCompanies.map(c => c.id);
+
+        setSelectedCompanies(rangeIds);
+      }
+    }
+  };
+
   // 自動スクロール機能
   const startAutoScroll = (direction: 'up' | 'down', speed: number) => {
     stopAutoScroll(); // 既存のスクロールを停止
+    
+    // スクロール方向を記録
+    scrollDirectionRef.current = direction;
 
     scrollIntervalRef.current = setInterval(() => {
       if (containerRef.current) {
         const scrollAmount = direction === 'up' ? -speed : speed;
         containerRef.current.scrollBy(0, scrollAmount);
+        
+        // スクロール後に選択範囲を更新
+        updateSelectionWhileScrolling();
       }
-    }, 20); // 50fps（少しスムーズに）
+    }, 50); // より緩やかに選択範囲を拡張
   };
 
   const stopAutoScroll = () => {
@@ -506,10 +597,15 @@ function CompanyListContent() {
       clearInterval(scrollIntervalRef.current);
       scrollIntervalRef.current = null;
     }
+    // スクロール方向をリセット
+    scrollDirectionRef.current = null;
   };
 
   const handleMouseMove = (event: React.MouseEvent, currentIndex: number) => {
     if (isRangeSelecting && rangeStartIndex !== null) {
+      // 現在のマウス位置を保存
+      currentMouseYRef.current = event.clientY;
+      
       setRangeEndIndex(currentIndex);
 
       // 範囲内の企業を選択

@@ -43,7 +43,7 @@ export interface Company {
     phoneNumber: string;
     representativeId: string; // 自社担当者ID
     listId?: string; // リストID（任意）
-    prospectScore: string; // 見込み度ランク（S, A, B, C, D, E, F, G, Z）
+    prospectScore?: string; // 見込み度ランク（S, A, B, C, D, E, F, G, Z）- 未設定可能
     memo?: string;
     createdAt: Date;
     updatedAt: Date;

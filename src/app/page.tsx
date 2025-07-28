@@ -130,7 +130,7 @@ function CompanyListContent() {
 
     // 見込み度フィルタ
     const matchesProspectScore = columnFilters.prospectScore.size === 0 ||
-      columnFilters.prospectScore.has(company.prospectScore);
+      columnFilters.prospectScore.has(company.prospectScore || 'unset');
 
     // 商談状況フィルタ
     const negotiationStatusValue = hasNegotiationActivity(company.id) ? 'met' : 'not-met';
@@ -154,7 +154,8 @@ function CompanyListContent() {
   };
 
   // 見込み度を表示用文字列に変換
-  const getProspectScoreText = (rank: string) => {
+  const getProspectScoreText = (rank?: string) => {
+    if (!rank) return '未設定';
     const rankMap = {
       'S': 'S: 決済者ノリノリ',
       'A': 'A: 決済者もう一押し',
@@ -183,6 +184,7 @@ function CompanyListContent() {
         break;
       case 'prospectScore':
         ['S', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'Z'].forEach(score => values.add(score));
+        values.add('unset'); // 未設定オプション
         break;
       case 'negotiationStatus':
         values.add('met');
@@ -201,7 +203,7 @@ function CompanyListContent() {
       case 'list':
         return value === 'unassigned' ? '未分類' : getListName(value);
       case 'prospectScore':
-        return getProspectScoreText(value);
+        return value === 'unset' ? '未設定' : getProspectScoreText(value);
       case 'negotiationStatus':
         return value === 'met' ? '商談済み' : '商談未実施';
       default:
@@ -667,7 +669,7 @@ function CompanyListContent() {
     const phoneNumber = formData.get('phoneNumber') as string;
     const representativeId = formData.get('representativeId') as string;
     const listId = formData.get('listId') as string;
-    const prospectScore = (formData.get('prospectScore') as string) || 'C';
+    const prospectScore = (formData.get('prospectScore') as string) || undefined;
     const memo = formData.get('memo') as string;
 
     if (!name || !contactPerson || !department || !position || !email || !phoneNumber || !representativeId) return;
@@ -704,7 +706,7 @@ function CompanyListContent() {
     const phoneNumber = formData.get('phoneNumber') as string;
     const representativeId = formData.get('representativeId') as string;
     const listId = formData.get('listId') as string;
-    const prospectScore = (formData.get('prospectScore') as string) || editingCompany.prospectScore;
+          const prospectScore = (formData.get('prospectScore') as string) || editingCompany.prospectScore || undefined;
     const memo = formData.get('memo') as string;
 
     if (!name || !contactPerson || !department || !position || !email || !phoneNumber || !representativeId) return;
@@ -947,20 +949,21 @@ function CompanyListContent() {
             representative = state.representatives[0];
           }
 
-          // 重複チェック（会社名のみでチェック）
-          const isDuplicate = state.companies.some(company =>
-            company.name === name
+          // 重複チェック（会社名と担当者名の組み合わせでチェック）
+          const normalizedContactPerson = contactPerson || '未設定';
+          const duplicateCompanies = state.companies.filter(company =>
+            company.name === name && company.contactPerson === normalizedContactPerson
           );
 
-          if (isDuplicate) {
+          if (duplicateCompanies.length > 0) {
             results.error++;
-            results.errors.push(`行 ${index + 2}: ${name} は既に登録済みです`);
+            results.errors.push(`行 ${index + 2}: ${name}（担当者: ${normalizedContactPerson}）は既に${duplicateCompanies.length}件登録済みです`);
             return;
           }
 
-          // 見込み度の処理（新ランクシステム）
-          let prospectScore = 'C'; // デフォルト値
-          if (prospectScoreStr) {
+          // 見込み度の処理（新ランクシステム）- 未設定の場合はundefined
+          let prospectScore: string | undefined = undefined;
+          if (prospectScoreStr && prospectScoreStr.trim()) {
             // 新ランクが入力された場合
             if (['S', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'Z'].includes(prospectScoreStr.toUpperCase())) {
               prospectScore = prospectScoreStr.toUpperCase();
@@ -968,14 +971,14 @@ function CompanyListContent() {
               // 数値が入力された場合の変換（下位互換性）
               const numScore = parseInt(prospectScoreStr);
               const scoreMap: { [key: number]: string } = { 1: 'E', 2: 'D', 3: 'C', 4: 'A', 5: 'S' };
-              prospectScore = scoreMap[numScore] || 'C';
+              prospectScore = scoreMap[numScore] || undefined;
             }
           }
 
           const newCompany: Company = {
             id: generateId(),
             name,
-            contactPerson: contactPerson || '未設定',
+            contactPerson: normalizedContactPerson,
             department: department || '未設定',
             position: position || '未設定',
             email: email || '',
@@ -1473,7 +1476,7 @@ function CompanyListContent() {
                   <li><strong>電子メール</strong> - 任意</li>
                   <li><strong>電話番号</strong> - 任意</li>
                   <li><strong>担当者</strong>（自社担当者名） - 任意（未設定なら最初の担当者）</li>
-                  <li><strong>見込み度</strong>（S,A,B,C,D,E,F,G,Z のランク、または1-5の数値） - 任意（未設定ならC）</li>
+                  <li><strong>見込み度</strong>（S,A,B,C,D,E,F,G,Z のランク、または1-5の数値） - 任意（未設定なら「未設定」のまま）</li>
                   <li><strong>メモ</strong> - 任意</li>
                 </ol>
                 <p className="mt-3"><strong>注意事項:</strong></p>
@@ -1481,7 +1484,7 @@ function CompanyListContent() {
                   <li>1行目はヘッダー行として無視されます</li>
                   <li>会社名のみ必須で、その他の項目は空でも構いません</li>
                   <li>担当者が存在しない場合は自動で作成されます</li>
-                  <li>重複する企業（会社名が同じ）はスキップされます</li>
+                  <li>重複する企業（会社名と担当者名が同じ組み合わせ）はスキップされ、既存件数が表示されます</li>
                 </ul>
               </div>
             </div>
@@ -1723,13 +1726,13 @@ function CompanyListContent() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">見込み度 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">見込み度</label>
                   <select
                     name="prospectScore"
-                    required
-                    defaultValue="C"
+                    defaultValue=""
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
+                    <option value="">未設定</option>
                     <option value="S">S: 決済者ノリノリ</option>
                     <option value="A">A: 決済者もう一押し</option>
                     <option value="B">B: 決済者乗り気じゃない</option>
@@ -1867,13 +1870,13 @@ function CompanyListContent() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">見込み度 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">見込み度</label>
                   <select
                     name="prospectScore"
-                    required
-                    defaultValue={editingCompany.prospectScore}
+                    defaultValue={editingCompany.prospectScore || ""}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
+                    <option value="">未設定</option>
                     <option value="S">S: 決済者ノリノリ</option>
                     <option value="A">A: 決済者もう一押し</option>
                     <option value="B">B: 決済者乗り気じゃない</option>

@@ -34,7 +34,8 @@ export default function CompanyDetail({ company, onClose }: CompanyDetailProps) 
   };
 
   // 見込み度を表示用文字列に変換
-  const getProspectScoreText = (rank: string) => {
+  const getProspectScoreText = (rank?: string) => {
+    if (!rank) return '未設定';
     const rankMap = {
       'S': 'S: 決済者ノリノリ',
       'A': 'A: 決済者もう一押し',

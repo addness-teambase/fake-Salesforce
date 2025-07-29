@@ -46,6 +46,7 @@ const convertDatabaseActivityToActivity = (dbActivity: DatabaseActivity): Activi
     amount: dbActivity.amount || undefined,
     probability: dbActivity.probability || undefined,
     status: (dbActivity.status as Activity['status']) || undefined,
+    appointmentSecured: dbActivity.appointment_secured || undefined,
     nextAction: dbActivity.next_action || undefined,
     nextActionDate: dbActivity.next_action_date ? new Date(dbActivity.next_action_date) : undefined,
     createdAt: new Date(dbActivity.created_at),
@@ -61,6 +62,7 @@ const convertActivityToDatabaseInsert = (activity: Omit<Activity, 'id' | 'create
     amount: activity.amount || null,
     probability: activity.probability || null,
     status: activity.status || null,
+    appointment_secured: activity.appointmentSecured || null,
     next_action: activity.nextAction || null,
     next_action_date: activity.nextActionDate ? activity.nextActionDate.toISOString() : null,
 })

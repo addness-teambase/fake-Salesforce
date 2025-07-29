@@ -394,6 +394,13 @@ export function AppProvider({ children }: AppProviderProps) {
                         createdAt: new Date(),
                         updatedAt: new Date(),
                     },
+                    {
+                        id: '00000000-0000-0000-0000-000000000003',
+                        name: 'アポ確保済み',
+                        description: 'アポイントが確保された企業',
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
                 ];
 
                 dispatch({ type: 'SET_COMPANIES', payload: demoCompanies });

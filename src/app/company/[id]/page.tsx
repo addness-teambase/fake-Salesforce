@@ -16,7 +16,7 @@ export default function CompanyDetail() {
 
     const company = state.companies.find(c => c.id === id);
     const activities = state.activities.filter(a => a.companyId === id).sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
     const deals = state.activities
         .filter(activity => activity.companyId === id && activity.type === 'negotiation')

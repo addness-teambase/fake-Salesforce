@@ -60,6 +60,7 @@ export interface Activity {
     amount?: number; // 商談金額（商談系の場合）
     probability?: number; // 受注確率（商談系の場合）
     status?: 'failed' | 'next_proposal' | 'consideration' | 'internal_sharing' | 'trial_contract' | 'contract' | 'opinion_exchange'; // 商談結果
+    appointmentSecured?: boolean; // アポ確保できたかどうか
     nextAction?: string;
     nextActionDate?: Date;
     createdAt: Date;

@@ -45,6 +45,7 @@ export interface DatabaseActivity {
     amount?: number
     probability?: number
     status?: string
+    appointment_secured?: boolean
     next_action?: string
     next_action_date?: string
     created_at: string
